@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+
 import '../../providers/transaction_provider.dart';
 import '../../data/models/transaction_model.dart';
 import 'add_note_page.dart';
 import 'edit_note_page.dart';
-import 'package:proyek_baru/helpers/currency_formatter.dart';
-import 'package:intl/intl.dart';
 import '../../helpers/enum.dart';
+import '../../helpers/currency_formatter.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -17,7 +18,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final TextEditingController _searchController = TextEditingController();
-  String? _selectedType; // untuk filter Income/Expense
+  String? _selectedType; // income, expense, null = all
   CycleType _selectedCycle = CycleType.thirtyDays;
 
   DateTime _cutoffDate(CycleType filter) {
@@ -32,15 +33,106 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  String getCycleLabel(CycleType cycle) {
+    return switch (cycle) {
+      CycleType.threeDays => "3 Hari Terakhir",
+      CycleType.oneWeek => "1 Minggu Terakhir",
+      CycleType.thirtyDays => "30 Hari Terakhir",
+    };
+  }
+
   List<TransactionModel> getFilteredTransactions(List<TransactionModel> allTx) {
     final cutoff = _cutoffDate(_selectedCycle);
     return allTx.where((tx) {
       final matchSearch = tx.description.toLowerCase().contains(_searchController.text.toLowerCase());
       final matchType = _selectedType == null || tx.type.toLowerCase() == _selectedType!.toLowerCase();
-      final txDate = tx.date is DateTime ? tx.date as DateTime : DateTime.parse(tx.date);
-      final matchDate = txDate.isAfter(cutoff);
+      final matchDate = tx.date.isAfter(cutoff);
       return matchSearch && matchType && matchDate;
     }).toList();
+  }
+
+  void _showFilterBottomSheet(BuildContext context) {
+    String? tempSelectedType = _selectedType;
+    CycleType tempSelectedCycle = _selectedCycle;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Tipe", style: TextStyle(fontWeight: FontWeight.bold)),
+                CheckboxListTile(
+                  value: tempSelectedType == 'Income',
+                  onChanged: (_) => setModalState(() => tempSelectedType = 'Income'),
+                  title: const Text('Income'),
+                ),
+                CheckboxListTile(
+                  value: tempSelectedType == 'Expense',
+                  onChanged: (_) => setModalState(() => tempSelectedType = 'Expense'),
+                  title: const Text('Expense'),
+                ),
+                CheckboxListTile(
+                  value: tempSelectedType == null,
+                  onChanged: (_) => setModalState(() => tempSelectedType = null),
+                  title: const Text('Semua'),
+                ),
+                const Divider(),
+                const Text("Siklus", style: TextStyle(fontWeight: FontWeight.bold)),
+                DropdownButton<CycleType>(
+                  value: tempSelectedCycle,
+                  isExpanded: true,
+                  underline: const SizedBox(),
+                  items: CycleType.values.map((CycleType cycle) {
+                    return DropdownMenuItem<CycleType>(
+                      value: cycle,
+                      child: Text(getCycleLabel(cycle)),
+                    );
+                  }).toList(),
+                  onChanged: (CycleType? value) {
+                    if (value != null) {
+                      setModalState(() {
+                        tempSelectedCycle = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedType = tempSelectedType;
+                        _selectedCycle = tempSelectedCycle;
+                      });
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple.shade50,
+                      foregroundColor: Colors.deepPurple,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      child: Text("Terapkan"),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -105,46 +197,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.filter_list),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(value: "All", child: Text("Semua")),
-                    const PopupMenuItem(value: "Income", child: Text("Income")),
-                    const PopupMenuItem(value: "Expense", child: Text("Expense")),
-                    const PopupMenuDivider(),
-                    PopupMenuItem<String>(
-                      enabled: false,
-                      child: DropdownButton<CycleType>(
-                        value: _selectedCycle,
-                        isExpanded: true,
-                        underline: const SizedBox(),
-                        items: CycleType.values.map((CycleType cycle) {
-                          return DropdownMenuItem<CycleType>(
-                            value: cycle,
-                            child: Text(
-                              switch (cycle) {
-                                CycleType.threeDays => "3 Hari Terakhir",
-                                CycleType.oneWeek => "1 Minggu Terakhir",
-                                CycleType.thirtyDays => "30 Hari Terakhir",
-                              },
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (CycleType? value) {
-                          if (value != null) {
-                            setState(() {
-                              _selectedCycle = value;
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                  onSelected: (value) {
-                    setState(() {
-                      _selectedType = value == "All" ? null : value;
-                    });
-                  },
+                IconButton(
+                  icon: const Icon(Icons.filter_alt),
+                  onPressed: () => _showFilterBottomSheet(context),
                 ),
               ],
             ),
@@ -166,7 +221,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           );
                         },
                         leading: Text(
-                          tx.date,
+                          DateFormat('dd-MM-yyyy').format(tx.date),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         title: Text(tx.description),

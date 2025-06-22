@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../data/models/transaction_model.dart';
 import '../../providers/transaction_provider.dart';
 import 'package:proyek_baru/helpers/currency_formatter.dart';
-
+import 'package:intl/intl.dart';
 
 class EditNotePage extends StatefulWidget {
   final TransactionModel transaction;
@@ -19,17 +19,20 @@ class _EditNotePageState extends State<EditNotePage> {
   late TextEditingController _descriptionController;
   late TextEditingController _amountController;
   late TextEditingController _typeController;
+  DateTime? _selectedDate;
 
   @override
   void initState() {
     super.initState();
-    _dateController = TextEditingController(text: widget.transaction.date);
+    _selectedDate = widget.transaction.date;
+    _dateController = TextEditingController(text: DateFormat('dd-MM-yyyy').format(widget.transaction.date));
     _descriptionController = TextEditingController(text: widget.transaction.description);
     _amountController = TextEditingController(text: widget.transaction.amount.toString());
     _typeController = TextEditingController(text: widget.transaction.type);
   }
 
-  Widget buildRowField(String label, TextEditingController controller, {TextInputType? keyboardType}) {
+  Widget buildRowField(String label, TextEditingController controller,
+      {TextInputType? keyboardType, VoidCallback? onTap, bool readOnly = false}) {
     return Column(
       children: [
         Row(
@@ -45,6 +48,8 @@ class _EditNotePageState extends State<EditNotePage> {
             Expanded(
               child: TextField(
                 controller: controller,
+                readOnly: readOnly,
+                onTap: onTap,
                 keyboardType: keyboardType,
                 textAlign: TextAlign.right,
                 decoration: const InputDecoration(
@@ -115,73 +120,75 @@ class _EditNotePageState extends State<EditNotePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-  "${formatCurrency(widget.transaction.amount)} • ${widget.transaction.date}",
-  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-),
-
-            const SizedBox(height: 16),
-
-            // Tombol Edit & Delete (1 baris besar)
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 16),
-              child: Row(
-                children: [
-                  // Tombol Edit
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        final updated = TransactionModel(
-                          id: widget.transaction.id,
-                          date: _dateController.text,
-                          description: _descriptionController.text,
-                          amount: double.tryParse(_amountController.text) ?? 0.0,
-                          type: _typeController.text,
-                        );
-                        Provider.of<TransactionProvider>(context, listen: false)
-                            .updateTransaction(updated);
-                        Navigator.pop(context);
-                      },
-                      icon: const Icon(Icons.edit),
-                      label: const Text("Edit"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFD8B1),
-                        foregroundColor: Colors.orange[900],
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Tombol Delete
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Provider.of<TransactionProvider>(context, listen: false)
-                            .deleteTransaction(widget.transaction.id);
-                        Navigator.pop(context);
-                      },
-                      icon: const Icon(Icons.delete),
-                      label: const Text("Delete"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFD8B1),
-                        foregroundColor: Colors.orange[900],
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              "${formatCurrency(widget.transaction.amount)} • ${DateFormat('dd-MM-yyyy').format(widget.transaction.date)}",
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final updated = TransactionModel(
+                        id: widget.transaction.id,
+                        date: _selectedDate!,
+                        description: _descriptionController.text,
+                        amount: double.tryParse(_amountController.text) ?? 0.0,
+                        type: _typeController.text,
+                      );
+                      Provider.of<TransactionProvider>(context, listen: false)
+                          .updateTransaction(updated);
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.edit),
+                    label: const Text("Edit"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFD8B1),
+                      foregroundColor: Colors.orange[900],
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Provider.of<TransactionProvider>(context, listen: false)
+                          .deleteTransaction(widget.transaction.id);
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.delete),
+                    label: const Text("Delete"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFD8B1),
+                      foregroundColor: Colors.orange[900],
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
-
-            // Field daftar transaksi
-            buildRowField("Date", _dateController),
+            buildRowField("Date", _dateController, readOnly: true, onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _selectedDate ?? DateTime.now(),
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2100),
+              );
+              if (picked != null) {
+                setState(() {
+                  _selectedDate = picked;
+                  _dateController.text = DateFormat('dd-MM-yyyy').format(picked);
+                });
+              }
+            }),
             buildRowField("Description", _descriptionController),
             buildRowField("Amount", _amountController, keyboardType: TextInputType.number),
             buildDropdownRowField("Type", _typeController),
