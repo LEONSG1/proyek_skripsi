@@ -18,7 +18,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final TextEditingController _searchController = TextEditingController();
-  String? _selectedType; // income, expense, null = all
+  String? _selectedType;
   CycleType _selectedCycle = CycleType.thirtyDays;
 
   DateTime _cutoffDate(CycleType filter) {
@@ -44,8 +44,11 @@ class _DashboardPageState extends State<DashboardPage> {
   List<TransactionModel> getFilteredTransactions(List<TransactionModel> allTx) {
     final cutoff = _cutoffDate(_selectedCycle);
     return allTx.where((tx) {
-      final matchSearch = tx.description.toLowerCase().contains(_searchController.text.toLowerCase());
-      final matchType = _selectedType == null || tx.type.toLowerCase() == _selectedType!.toLowerCase();
+      final matchSearch = tx.description
+          .toLowerCase()
+          .contains(_searchController.text.toLowerCase());
+      final matchType = _selectedType == null ||
+          tx.type.toLowerCase() == _selectedType!.toLowerCase();
       final matchDate = tx.date.isAfter(cutoff);
       return matchSearch && matchType && matchDate;
     }).toList();
@@ -141,104 +144,183 @@ class _DashboardPageState extends State<DashboardPage> {
     final transactions = getFilteredTransactions(allTx);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Groceries"),
-        backgroundColor: Colors.orange[700],
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddNotePage()),
-                );
-              },
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.add, color: Colors.orange),
-                    SizedBox(width: 4),
-                    Text(
-                      "Add",
-                      style: TextStyle(
-                        color: Colors.orange,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
+      appBar: PreferredSize(
+  preferredSize: const Size.fromHeight(140),
+  child: Container(
+    color: const Color(0xFFDC6A26), // Warna Glide
+    child: SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 24, left: 16, right: 16, bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start, // ⬅️ ini penting
+          children: [
+            // Title dan Add
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      hintText: 'Cari transaksi...',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                    onChanged: (value) => setState(() {}),
+                const Text(
+                  "Groceries",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.filter_alt),
-                  onPressed: () => _showFilterBottomSheet(context),
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AddNotePage()),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.add, color: Color(0xFFDC6A26), size: 20),
+                        SizedBox(width: 4),
+                        Text(
+                          "Add",
+                          style: TextStyle(
+                            color: Color(0xFFDC6A26),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            child: transactions.isEmpty
-                ? const Center(child: Text("Belum ada transaksi"))
-                : ListView.builder(
-                    itemCount: transactions.length,
-                    itemBuilder: (context, index) {
-                      final tx = transactions[index];
-                      return ListTile(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => EditNotePage(transaction: tx),
-                            ),
-                          );
-                        },
-                        leading: Text(
-                          DateFormat('dd-MM-yyyy').format(tx.date),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        title: Text(tx.description),
-                        subtitle: Text(tx.type),
-                        trailing: Text(
-                          formatCurrency(tx.amount),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.redAccent,
-                          ),
-                        ),
-                      );
-                    },
+            const SizedBox(height: 14),
+            // Search & Filter
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      style: const TextStyle(color: Colors.white),
+                      cursorColor: Colors.white,
+                      decoration: const InputDecoration(
+                        hintText: 'Cari',
+                        hintStyle: TextStyle(color: Colors.white70),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                        prefixIcon: Icon(Icons.search, color: Colors.white),
+                      ),
+                      onChanged: (value) => setState(() {}),
+                    ),
                   ),
-          ),
-        ],
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: const BoxDecoration(
+                    color: Colors.white24,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.filter_alt, color: Colors.white),
+                    onPressed: () => _showFilterBottomSheet(context),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
+    ),
+  ),
+),
+
+      body: transactions.isEmpty
+          ? const Center(child: Text("Belum ada transaksi"))
+          : ListView.builder(
+              itemCount: transactions.length,
+              itemBuilder: (context, index) {
+                final tx = transactions[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EditNotePage(transaction: tx),
+                      ),
+                    );
+                  },
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            DateFormat('dd-MM-yyyy').format(tx.date),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+  tx.category,  // ← sekarang tampilkan kategori
+  style: const TextStyle(fontWeight: FontWeight.bold),
+),
+
+                                  Text(
+                                    tx.type,
+                                    style: TextStyle(
+                                      color: tx.type == 'Income'
+                                          ? Colors.green[800]
+                                          : Colors.red[800],
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                formatCurrency(tx.amount),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
