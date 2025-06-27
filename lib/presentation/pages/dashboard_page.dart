@@ -17,27 +17,43 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  final TextEditingController _searchController = TextEditingController();
-  String? _selectedType;
-  CycleType _selectedCycle = CycleType.thirtyDays;
+  /* ────────── 1. VARIABEL GLOBAL SEDERHANA ────────── */
+  // ★ disimpan statis agar bertahan saat tab berganti
+  static String? _lastType;
+  static CycleType _lastCycle = CycleType.all;
 
+  /* -------------------------------------------------- */
+  final TextEditingController _searchController = TextEditingController();
+
+  late String? _selectedType;            // ★ di-late, diisi initState
+  late CycleType _selectedCycle;
+
+  /* ────────── 2. INIT STATE ────────── */
+  @override
+  void initState() {
+    super.initState();
+    _selectedType  = _lastType;          // ★ ambil nilai terakhir
+    _selectedCycle = _lastCycle;
+
+    _searchController.addListener(() => setState(() {}));
+  }
   DateTime _cutoffDate(CycleType filter) {
     final now = DateTime.now();
     switch (filter) {
-      case CycleType.threeDays:
-        return now.subtract(const Duration(days: 3));
       case CycleType.oneWeek:
         return now.subtract(const Duration(days: 7));
       case CycleType.thirtyDays:
         return now.subtract(const Duration(days: 30));
+      case CycleType.all: // ⬅️ tampilkan semua
+        return DateTime.fromMillisecondsSinceEpoch(0);
     }
   }
 
   String getCycleLabel(CycleType cycle) {
     return switch (cycle) {
-      CycleType.threeDays => "3 Hari Terakhir",
-      CycleType.oneWeek => "1 Minggu Terakhir",
+      CycleType.oneWeek => "7 Hari Terakhir",
       CycleType.thirtyDays => "30 Hari Terakhir",
+      CycleType.all => "Semua",
     };
   }
 
@@ -71,24 +87,29 @@ class _DashboardPageState extends State<DashboardPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Tipe", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text("Tipe",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 CheckboxListTile(
                   value: tempSelectedType == 'Income',
-                  onChanged: (_) => setModalState(() => tempSelectedType = 'Income'),
+                  onChanged: (_) =>
+                      setModalState(() => tempSelectedType = 'Income'),
                   title: const Text('Income'),
                 ),
                 CheckboxListTile(
                   value: tempSelectedType == 'Expense',
-                  onChanged: (_) => setModalState(() => tempSelectedType = 'Expense'),
+                  onChanged: (_) =>
+                      setModalState(() => tempSelectedType = 'Expense'),
                   title: const Text('Expense'),
                 ),
                 CheckboxListTile(
                   value: tempSelectedType == null,
-                  onChanged: (_) => setModalState(() => tempSelectedType = null),
+                  onChanged: (_) =>
+                      setModalState(() => tempSelectedType = null),
                   title: const Text('Semua'),
                 ),
                 const Divider(),
-                const Text("Siklus", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text("Siklus",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 DropdownButton<CycleType>(
                   value: tempSelectedCycle,
                   isExpanded: true,
@@ -125,7 +146,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                     child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       child: Text("Terapkan"),
                     ),
                   ),
@@ -145,109 +167,115 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       appBar: PreferredSize(
-  preferredSize: const Size.fromHeight(140),
-  child: Container(
-    color: const Color(0xFFDC6A26), // Warna Glide
-    child: SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 24, left: 16, right: 16, bottom: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start, // ⬅️ ini penting
-          children: [
-            // Title dan Add
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Groceries",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AddNotePage()),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.add, color: Color(0xFFDC6A26), size: 20),
-                        SizedBox(width: 4),
-                        Text(
-                          "Add",
-                          style: TextStyle(
-                            color: Color(0xFFDC6A26),
-                            fontWeight: FontWeight.bold,
+        preferredSize: const Size.fromHeight(140),
+        child: Container(
+          color: const Color(0xFFDC6A26), // Warna Glide
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.only(
+                  top: 24, left: 16, right: 16, bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start, // ⬅️ ini penting
+                children: [
+                  // Title dan Add
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Groceries",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const AddNotePage()),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.add,
+                                  color: Color(0xFFDC6A26), size: 20),
+                              SizedBox(width: 4),
+                              Text(
+                                "Add",
+                                style: TextStyle(
+                                  color: Color(0xFFDC6A26),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            // Search & Filter
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      style: const TextStyle(color: Colors.white),
-                      cursorColor: Colors.white,
-                      decoration: const InputDecoration(
-                        hintText: 'Cari',
-                        hintStyle: TextStyle(color: Colors.white70),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                        prefixIcon: Icon(Icons.search, color: Colors.white),
                       ),
-                      onChanged: (value) => setState(() {}),
-                    ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: const BoxDecoration(
-                    color: Colors.white24,
-                    shape: BoxShape.circle,
+                  const SizedBox(height: 14),
+                  // Search & Filter
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            style: const TextStyle(color: Colors.white),
+                            cursorColor: Colors.white,
+                            decoration: const InputDecoration(
+                              hintText: 'Cari',
+                              hintStyle: TextStyle(color: Colors.white70),
+                              border: InputBorder.none,
+                              contentPadding:
+                                  EdgeInsets.symmetric(vertical: 10),
+                              prefixIcon:
+                                  Icon(Icons.search, color: Colors.white),
+                            ),
+                            onChanged: (value) => setState(() {}),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: const BoxDecoration(
+                          color: Colors.white24,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon:
+                              const Icon(Icons.filter_alt, color: Colors.white),
+                          onPressed: () => _showFilterBottomSheet(context),
+                        ),
+                      ),
+                    ],
                   ),
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    icon: const Icon(Icons.filter_alt, color: Colors.white),
-                    onPressed: () => _showFilterBottomSheet(context),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
-    ),
-  ),
-),
-
       body: transactions.isEmpty
           ? const Center(child: Text("Belum ada transaksi"))
           : ListView.builder(
@@ -264,7 +292,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     );
                   },
                   child: Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -290,10 +319,10 @@ class _DashboardPageState extends State<DashboardPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-  tx.category,  // ← sekarang tampilkan kategori
-  style: const TextStyle(fontWeight: FontWeight.bold),
-),
-
+                                    tx.category, // ← sekarang tampilkan kategori
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
                                   Text(
                                     tx.type,
                                     style: TextStyle(

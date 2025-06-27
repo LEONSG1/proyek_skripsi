@@ -1,3 +1,3 @@
 enum TransactionType { all, income, expense }
 
-enum CycleType { threeDays, oneWeek, thirtyDays }
+enum CycleType { oneWeek, thirtyDays, all }

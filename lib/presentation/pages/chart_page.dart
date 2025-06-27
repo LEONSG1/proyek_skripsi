@@ -20,30 +20,42 @@ class ChartPage extends StatefulWidget {
 }
 
 class _ChartPageState extends State<ChartPage> {
-  CycleType _selectedCycle = CycleType.thirtyDays;
+    /* ---------- ❶ VARIABEL GLOBAL SEDERHANA ---------- */
+  static CycleType _lastCycle = CycleType.all;
+
+  /* ---------- STATE HALAMAN ---------- */
+  late CycleType _selectedCycle;               // diisi di initState
+
+  /* ---------- ❷ INIT STATE ---------- */
+  @override
+  void initState() {
+    super.initState();
+    _selectedCycle = _lastCycle;               // ambil nilai terakhir
+  }
 
   DateTime _cutoffDate(CycleType cycle) {
-    final now = DateTime.now();
-    switch (cycle) {
-      case CycleType.threeDays:
-        return now.subtract(const Duration(days: 3));
-      case CycleType.oneWeek:
-        return now.subtract(const Duration(days: 7));
-      case CycleType.thirtyDays:
-        return now.subtract(const Duration(days: 30));
-    }
+  final now = DateTime.now();
+  switch (cycle) {
+    case CycleType.oneWeek:
+      return now.subtract(const Duration(days: 7));
+    case CycleType.thirtyDays:
+      return now.subtract(const Duration(days: 30));
+    case CycleType.all:                       // tampilkan semua data
+      return DateTime.fromMillisecondsSinceEpoch(0);
   }
+}
 
-  String _cycleLabel(CycleType c) {
-    switch (c) {
-      case CycleType.threeDays:
-        return '3 Hari';
-      case CycleType.oneWeek:
-        return '1 Minggu';
-      case CycleType.thirtyDays:
-        return '30 Hari';
-    }
+String _cycleLabel(CycleType c) {
+  switch (c) {
+    case CycleType.oneWeek:
+      return '7 Hari';
+    case CycleType.thirtyDays:
+      return '30 Hari';
+    case CycleType.all:
+      return 'Semua';
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

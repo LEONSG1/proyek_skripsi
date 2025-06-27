@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../pages/category_picker_page.dart'; // sesuaikan path jika berbeda
 
 import '../../data/models/transaction_model.dart';
 import '../../providers/transaction_provider.dart';
-import '../../main.dart'; // adjust if your MyApp import path differs
+import '../../main.dart';
 
 enum EntryType { expense, income }
 
@@ -17,34 +18,26 @@ class AddNotePage extends StatefulWidget {
 }
 
 class _AddNotePageState extends State<AddNotePage> {
+  /* ──────────────── STATE & CONTROLLERS ──────────────── */
   final _formKey = GlobalKey<FormState>();
   EntryType _entryType = EntryType.expense;
   String? _category;
   DateTime? _pickedDate;
 
-  final TextEditingController _amountCtrl = TextEditingController();
-  final TextEditingController _descCtrl = TextEditingController();
-  final TextEditingController _dateCtrl = TextEditingController();
+  final _amountCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  final _dateCtrl = TextEditingController();
 
-  static const List<String> _expenseCategories = [
-    'Beras',
-    'Gaji Karyawan',
-    'Beban Listrik',
-  ];
-  static const List<String> _incomeCategories = [
-    'Nasi Ayam',
-    'Nasi Rendang',
-    'Lainnya',
-  ];
+  static const _expenseCategories = ['Beras', 'Gaji Karyawan', 'Beban Listrik'];
+  static const _incomeCategories = ['Nasi Ayam', 'Nasi Rendang', 'Lainnya'];
 
-  List<String> get _currentCats =>
+  List<String> get _cats =>
       _entryType == EntryType.expense ? _expenseCategories : _incomeCategories;
 
   Future<void> _pickDate() async {
-    final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: _pickedDate ?? now,
+      initialDate: _pickedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -56,6 +49,192 @@ class _AddNotePageState extends State<AddNotePage> {
     }
   }
 
+  /* ─────────────────────── BUILD ─────────────────────── */
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6F8FA),
+      appBar: AppBar(
+        title: const Text('Tambah Catatan'),
+        backgroundColor: cs.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            /* ===== TOGGLE ===== */
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: SegmentedButton<EntryType>(
+                segments: const [
+                  ButtonSegment(
+                      value: EntryType.expense, label: Text('Pengeluaran')),
+                  ButtonSegment(
+                      value: EntryType.income, label: Text('Pemasukan')),
+                ],
+                selected: {_entryType},
+                onSelectionChanged: (s) => setState(() {
+                  _entryType = s.first;
+                  _category = null;
+                }),
+                style: SegmentedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  selectedBackgroundColor: cs.primary,
+                  selectedForegroundColor: Colors.white,
+                  foregroundColor: cs.primary,
+                ),
+              ),
+            ),
+
+            /* ===== FORM KARTU PUTIH ===== */
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    blurRadius: 6,
+                    color: Colors.black.withOpacity(.06),
+                  )
+                ],
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 24),
+
+                    /* —— JUMLAH —— */
+                    _FieldTile(
+                      leading: const Icon(Icons.payments_outlined, size: 22),
+                      child: TextFormField(
+                        controller: _amountCtrl,
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          prefixText: 'Rp ',
+                          prefixStyle: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                          hintText: '0',
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Masukkan jumlah' : null,
+                      ),
+                    ),
+
+                    /* —— KATEGORI —— */
+                    /* —— KATEGORI —— */
+/* —— KATEGORI —— */
+                    _NavTile(
+                      icon: Icons.grid_view_rounded,
+                      title: _category ?? 'Pilih Kategori',
+                      isPlaceholder: _category == null,
+                      onTap: () async {
+                        final picked = await Navigator.push<String>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CategoryPickerPage(
+                              isExpense: _entryType ==
+                                  EntryType.expense, // ✅ param yang benar
+                            ),
+                          ),
+                        );
+                        if (picked != null) setState(() => _category = picked);
+                      },
+                    ),
+
+                    /* —— TANGGAL —— */
+                    _NavTile(
+                      icon: Icons.calendar_month,
+                      title: _dateCtrl.text.isEmpty
+                          ? 'Pilih Tanggal'
+                          : _dateCtrl.text,
+                      isPlaceholder: _dateCtrl.text.isEmpty,
+                      onTap: _pickDate,
+                    ),
+
+                    /* —— DESKRIPSI —— */
+                    _FieldTile(
+                      leading: const Icon(Icons.notes),
+                      child: TextFormField(
+                        controller: _descCtrl,
+                        decoration: const InputDecoration(
+                          hintText: 'Deskripsi (opsional)',
+                          border: InputBorder.none,
+                        ),
+                        maxLines: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    /* —— SIMPAN —— */
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: cs.primary,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: _onSubmit,
+                        child: const Text('Simpan'),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /* ───────────────────── SUBMIT ───────────────────── */
+  void _onSubmit() {
+    if (_formKey.currentState!.validate()) {
+      if (_pickedDate == null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Pilih tanggal')));
+        return;
+      }
+      if (_category == null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Pilih kategori')));
+        return;
+      }
+
+      final tx = TransactionModel(
+        id: UniqueKey().toString(),
+        date: _pickedDate!,
+        category: _category!,
+        description: _descCtrl.text,
+        amount: double.parse(_amountCtrl.text),
+        type: _entryType == EntryType.expense ? 'Expense' : 'Income',
+      );
+      Provider.of<TransactionProvider>(context, listen: false)
+          .addTransaction(tx);
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MyApp()),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _amountCtrl.dispose();
@@ -63,194 +242,75 @@ class _AddNotePageState extends State<AddNotePage> {
     _dateCtrl.dispose();
     super.dispose();
   }
+}
+
+/* ──────────────── WIDGET UTILITAS ──────────────── */
+
+class _FieldTile extends StatelessWidget {
+  final Widget leading;
+  final Widget child;
+  const _FieldTile({required this.leading, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tambah Catatan'),
-        backgroundColor: Colors.orange[700],
-      ),
-      body: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(children: [
-            const SizedBox(height: 16),
+    final primary = Theme.of(context).colorScheme.primary;
 
-            // Pill toggle
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(children: [
-                Expanded(
-                  child: ChoiceChip(
-                    label: const Text('Pengeluaran'),
-                    selected: _entryType == EntryType.expense,
-                    onSelected: (_) => setState(() {
-                      _entryType = EntryType.expense;
-                      _category = null;
-                    }),
-                    selectedColor: Colors.orange[700],
-                    backgroundColor: Colors.grey[200],
-                    labelStyle: TextStyle(
-                        color: _entryType == EntryType.expense
-                            ? Colors.white
-                            : Colors.black),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ChoiceChip(
-                    label: const Text('Pemasukan'),
-                    selected: _entryType == EntryType.income,
-                    onSelected: (_) => setState(() {
-                      _entryType = EntryType.income;
-                      _category = null;
-                    }),
-                    selectedColor: Colors.orange[700],
-                    backgroundColor: Colors.grey[200],
-                    labelStyle: TextStyle(
-                        color: _entryType == EntryType.income
-                            ? Colors.white
-                            : Colors.black),
-                  ),
-                ),
-              ]),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Jumlah
-            ListTile(
-              leading: Icon(Icons.attach_money, color: Colors.orange[700]),
-              title: TextFormField(
-                controller: _amountCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'Rp',
-                  border: InputBorder.none,
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Masukkan jumlah' : null,
-              ),
-            ),
-            const Divider(),
-
-            // Kategori
-            ListTile(
-              leading: Icon(Icons.category, color: Colors.orange[700]),
-              title: Text(
-                _category ?? 'Pilih Kategori',
-                style: TextStyle(
-                  color: _category == null ? Colors.black38 : Colors.black87,
-                ),
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => showModalBottomSheet(
-                context: context,
-                shape: const RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(16))),
-                builder: (_) => SafeArea(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: _currentCats.length,
-                    separatorBuilder: (_, __) => const Divider(),
-                    itemBuilder: (c, i) {
-                      final cat = _currentCats[i];
-                      return ListTile(
-                        title: Text(cat),
-                        onTap: () {
-                          setState(() => _category = cat);
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-            const Divider(),
-
-            // Tanggal
-            ListTile(
-              leading: Icon(Icons.calendar_today, color: Colors.orange[700]),
-              title: Text(
-                _dateCtrl.text.isEmpty ? 'Pilih Tanggal' : _dateCtrl.text,
-                style: TextStyle(
-                  color:
-                      _dateCtrl.text.isEmpty ? Colors.black38 : Colors.black87,
-                ),
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _pickDate,
-            ),
-            const Divider(),
-
-            // Deskripsi
-            ListTile(
-              leading: Icon(Icons.notes, color: Colors.orange[700]),
-              title: TextFormField(
-                controller: _descCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'Deskripsi (opsional)',
-                  border: InputBorder.none,
-                ),
-                maxLines: 2,
-              ),
-            ),
-            const Divider(),
-
-            const SizedBox(height: 24),
-
-            // Kirim button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange[700]),
-                  child: const Text('Kirim'),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      if (_pickedDate == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Pilih tanggal')));
-                        return;
-                      }
-                      if (_category == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Pilih kategori')));
-                        return;
-                      }
-
-                      final tx = TransactionModel(
-                        id: UniqueKey().toString(),
-                        date: _pickedDate!,
-                        category: _category!,
-                        description: _descCtrl.text,
-                        amount: double.parse(_amountCtrl.text),
-                        type: _entryType == EntryType.expense
-                            ? 'Expense'
-                            : 'Income',
-                      );
-                      Provider.of<TransactionProvider>(context, listen: false)
-                          .addTransaction(tx);
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const MyApp()),
-                      );
-                    }
-                  },
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-          ]),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFE0E0E0), width: .8),
         ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          /* >>> lebar & posisi sama dengan ListTile <<< */
+          SizedBox(
+            width: 40,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: leading is Icon
+                  ? Icon((leading as Icon).icon, color: primary)
+                  : leading,
+            ),
+          ),
+          const SizedBox(width: 16), // sama dgn horizontalTitleGap
+          Expanded(child: child),
+        ],
       ),
     );
   }
+}
+
+class _NavTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final bool isPlaceholder;
+  final VoidCallback onTap;
+  const _NavTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.isPlaceholder = false,
+  });
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
+        minLeadingWidth: 40, // konsisten dgn FieldTile
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 15,
+            color: isPlaceholder ? Colors.black38 : Colors.black87,
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+        contentPadding: EdgeInsets.zero,
+        shape: const Border(
+          bottom: BorderSide(color: Color(0xFFE0E0E0), width: .8),
+        ),
+      );
 }

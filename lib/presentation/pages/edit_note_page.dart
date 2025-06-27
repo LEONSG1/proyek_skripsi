@@ -1,66 +1,182 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../../data/models/transaction_model.dart';
 import '../../providers/transaction_provider.dart';
-
-enum EntryType { expense, income }
+import '../../main.dart';
+import 'category_picker_page.dart';
+import 'add_note_page.dart';      // untuk enum EntryType
 
 class EditNotePage extends StatefulWidget {
   final TransactionModel transaction;
-
-  const EditNotePage({Key? key, required this.transaction}) : super(key: key);
+  const EditNotePage({super.key, required this.transaction});
 
   @override
-  _EditNotePageState createState() => _EditNotePageState();
+  State<EditNotePage> createState() => _EditNotePageState();
 }
 
 class _EditNotePageState extends State<EditNotePage> {
   late EntryType _entryType;
-  late String _category;
-  late DateTime _pickedDate;
+  late String?   _category;
+  late DateTime  _pickedDate;
 
-  final _descCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
-  final _dateCtrl = TextEditingController();
-
-  static const _expenseCategories = [
-    'Beras',
-    'Gaji Karyawan',
-    'Beban Listrik',
-  ];
-  static const _incomeCategories = [
-    'Nasi Ayam',
-    'Nasi Rendang',
-    'Lainnya',
-  ];
-
-  List<String> get _currentCats =>
-      _entryType == EntryType.expense ? _expenseCategories : _incomeCategories;
+  final _descCtrl   = TextEditingController();
+  final _dateCtrl   = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // initialize from the passed-in transaction
-    _entryType = widget.transaction.type == 'Income'
-        ? EntryType.income
-        : EntryType.expense;
-    _category = widget.transaction.category;
+    _entryType  = widget.transaction.type == 'Expense'
+        ? EntryType.expense
+        : EntryType.income;
+    _category   = widget.transaction.category;
     _pickedDate = widget.transaction.date;
-    _descCtrl.text = widget.transaction.description;
+
     _amountCtrl.text = widget.transaction.amount.toStringAsFixed(0);
-    _dateCtrl.text = DateFormat('dd-MM-yyyy').format(_pickedDate);
+    _descCtrl.text   = widget.transaction.description;
+    _dateCtrl.text   = DateFormat('dd-MM-yyyy').format(_pickedDate);
   }
 
+  /* ─────────────────────── BUILD ─────────────────────── */
   @override
-  void dispose() {
-    _descCtrl.dispose();
-    _amountCtrl.dispose();
-    _dateCtrl.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6F8FA),
+      appBar: AppBar(
+        title: const Text('Edit Note'),
+        backgroundColor: cs.primary,
+        foregroundColor: Colors.white,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+
+            /* ===== BUTTON UPDATE / DELETE ===== */
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.primary,
+                        shape: const StadiumBorder(),
+                      ),
+                      onPressed: _onUpdate,
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Update'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        shape: const StadiumBorder(),
+                      ),
+                      onPressed: _onDelete,
+                      icon: const Icon(Icons.delete),
+                      label: const Text('Delete'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            /* ===== KARTU PUTIH FORM ===== */
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(blurRadius: 6, color: Colors.black.withOpacity(.06))
+                ],
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 24),
+
+                  /* —— JUMLAH —— */
+                  _FieldTile(
+                    leading: const Icon(Icons.payments_outlined, size: 22),
+                    child: TextFormField(
+                      controller: _amountCtrl,
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,
+                        prefixText: 'Rp ',
+                        prefixStyle: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    ),
+                  ),
+
+                  /* —— KATEGORI —— */
+                  _NavTile(
+                    icon: Icons.grid_view_rounded,
+                    title: _category ?? 'Pilih Kategori',
+                    isPlaceholder: _category == null,
+                    onTap: () async {
+                      final picked = await Navigator.push<String>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              CategoryPickerPage(isExpense: _entryType == EntryType.expense),
+                        ),
+                      );
+                      if (picked != null) setState(() => _category = picked);
+                    },
+                  ),
+
+                  /* —— TANGGAL —— */
+                  _NavTile(
+                    icon: Icons.calendar_month,
+                    title: _dateCtrl.text,
+                    isPlaceholder: false,
+                    onTap: _pickDate,
+                  ),
+
+                  /* —— DESKRIPSI —— */
+                  _FieldTile(
+                    leading: const Icon(Icons.notes),
+                    child: TextFormField(
+                      controller: _descCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'Deskripsi (opsional)',
+                        border: InputBorder.none,
+                      ),
+                      maxLines: 2,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
   }
 
+  /* ───────────────────── ACTIONS ───────────────────── */
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -76,208 +192,103 @@ class _EditNotePageState extends State<EditNotePage> {
     }
   }
 
-  void _showCategorySheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (_) => SafeArea(
-        child: ListView.separated(
-          shrinkWrap: true,
-          itemCount: _currentCats.length,
-          separatorBuilder: (_, __) => const Divider(),
-          itemBuilder: (c, i) {
-            final cat = _currentCats[i];
-            return ListTile(
-              title: Text(cat),
-              onTap: () {
-                setState(() => _category = cat);
-                Navigator.pop(context);
-              },
-            );
-          },
-        ),
-      ),
+  void _onUpdate() {
+    final updated = TransactionModel(
+      id: widget.transaction.id,
+      date: _pickedDate,
+      category: _category ?? widget.transaction.category,
+      description: _descCtrl.text,
+      amount: double.tryParse(_amountCtrl.text) ?? widget.transaction.amount,
+      type: _entryType == EntryType.expense ? 'Expense' : 'Income',
     );
+
+    Provider.of<TransactionProvider>(context, listen: false)
+        .updateTransaction(updated);                   // method yang ada
+    Navigator.pop(context);
+  }
+
+  void _onDelete() {
+    Provider.of<TransactionProvider>(context, listen: false)
+        .deleteTransaction(widget.transaction.id);     // ganti nama sesuai provider
+    Navigator.pop(context);
   }
 
   @override
+  void dispose() {
+    _amountCtrl.dispose();
+    _descCtrl.dispose();
+    _dateCtrl.dispose();
+    super.dispose();
+  }
+}
+
+/* ─────────── TILE UTILITIES (sama dgn AddNote) ─────────── */
+
+class _FieldTile extends StatelessWidget {
+  final Widget leading;
+  final Widget child;
+  const _FieldTile({required this.leading, required this.child});
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // 1) AppBar with a bottom toggle:
-      appBar: AppBar(
-        title: const Text('Edit Note'),
-        backgroundColor: Colors.orange[700],
-        bottom: PreferredSize(
-  preferredSize: const Size.fromHeight(48),
-  child: Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
-    child: Row(
-      children: [
-        Expanded(
-          child: ChoiceChip(
-            label: const Text('Pengeluaran'),
-            selected: _entryType == EntryType.expense,
-            onSelected: (_) => setState(() => _entryType = EntryType.expense),
-            backgroundColor: Colors.white,
-            selectedColor: Colors.white,
-            shape: StadiumBorder(
-              side: BorderSide(
-                color: _entryType == EntryType.expense
-                    ? Colors.orange.shade700
-                    : Colors.grey.shade400,
-                width: 1.5,
-              ),
-            ),
-            labelStyle: TextStyle(
-              color: _entryType == EntryType.expense
-                  ? Colors.orange.shade700
-                  : Colors.grey.shade700,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: ChoiceChip(
-            label: const Text('Pemasukan'),
-            selected: _entryType == EntryType.income,
-            onSelected: (_) => setState(() => _entryType = EntryType.income),
-            backgroundColor: Colors.white,
-            selectedColor: Colors.white,
-            shape: StadiumBorder(
-              side: BorderSide(
-                color: _entryType == EntryType.income
-                    ? Colors.orange.shade700
-                    : Colors.grey.shade400,
-                width: 1.5,
-              ),
-            ),
-            labelStyle: TextStyle(
-              color: _entryType == EntryType.income
-                  ? Colors.orange.shade700
-                  : Colors.grey.shade700,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    ),
-  ),
-),
+    final primary = Theme.of(context).colorScheme.primary;
 
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFE0E0E0), width: .8),
+        ),
       ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // 2) Update & Delete buttons in the body
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Update'),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange[700]),
-                    onPressed: () {
-                      // simple field validation
-                      if (_amountCtrl.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Isi jumlah dulu')));
-                        return;
-                      }
-                      if (_category.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Pilih kategori')));
-                        return;
-                      }
-                      final updated = TransactionModel(
-                        id: widget.transaction.id,
-                        date: _pickedDate,
-                        category: _category,
-                        description: _descCtrl.text,
-                        amount: double.parse(_amountCtrl.text),
-                        type: _entryType == EntryType.expense
-                            ? 'Expense'
-                            : 'Income',
-                      );
-                      Provider.of<TransactionProvider>(context, listen: false)
-                          .updateTransaction(updated);
-                      Navigator.pop(context);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.delete),
-                    label: const Text('Delete'),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[400]),
-                    onPressed: () {
-                      Provider.of<TransactionProvider>(context, listen: false)
-                          .deleteTransaction(widget.transaction.id);
-                      Navigator.pop(context);
-                    },
-                  ),
-                ),
-              ],
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          /* >>> lebar & posisi sama dengan ListTile <<< */
+          SizedBox(
+            width: 40,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: leading is Icon
+                  ? Icon((leading as Icon).icon, color: primary)
+                  : leading,
             ),
-
-            const SizedBox(height: 24),
-
-            // 3) Jumlah row
-            ListTile(
-              leading: Icon(Icons.attach_money, color: Colors.orange[700]),
-              title: TextField(
-                controller: _amountCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  hintText: 'Jumlah',
-                  border: InputBorder.none,
-                ),
-              ),
-            ),
-            const Divider(),
-
-            // 4) Kategori row
-            ListTile(
-              leading: Icon(Icons.category, color: Colors.orange[700]),
-              title: Text(
-                _category,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _showCategorySheet,
-            ),
-            const Divider(),
-
-            // 5) Tanggal row
-            ListTile(
-              leading: Icon(Icons.calendar_today, color: Colors.orange[700]),
-              title: Text(_dateCtrl.text),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _pickDate,
-            ),
-            const Divider(),
-
-            // 6) Deskripsi row
-            ListTile(
-              leading: Icon(Icons.notes, color: Colors.orange[700]),
-              title: TextField(
-                controller: _descCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'Deskripsi (opsional)',
-                  border: InputBorder.none,
-                ),
-              ),
-            ),
-            const Divider(),
-          ],
-        ),
+          ),
+          const SizedBox(width: 16), // sama dgn horizontalTitleGap
+          Expanded(child: child),
+        ],
       ),
     );
   }
+}
+
+class _NavTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final bool isPlaceholder;
+  final VoidCallback onTap;
+  const _NavTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.isPlaceholder = false,
+  });
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
+        minLeadingWidth: 40,
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 15,
+            color: isPlaceholder ? Colors.black38 : Colors.black87,
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+        contentPadding: EdgeInsets.zero,
+        shape: const Border(
+          bottom: BorderSide(color: Color(0xFFE0E0E0), width: .8),
+        ),
+      );
 }
