@@ -41,44 +41,47 @@ class _InventoryPageState extends State<InventoryPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Stok Bahan'),
-        backgroundColor: Colors.green[700],
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            onPressed: () {
-              // navigasi ke halaman tambah item
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddInventoryPage()),
-              );
-            },
-          )
-        ],
+        title: const Text(
+          'STOK BARANG',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: const Color(0xFFDC6A26),
+        centerTitle: true,
       ),
       body: Column(
         children: [
           // ───── Top Card ─────
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              color: Colors.green[100],
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildSummary('${inv.totalCount}', 'item'),
-                    _buildSummary('${inv.lowStockCount}', 'stok menipis'),
-                    _buildSummary(formatCurrency(inv.totalValue), 'total nilai'),
-                  ],
+              padding: const EdgeInsets.all(16),
+              child: Card(
+                color: Colors.transparent, // biarkan transparan
+                surfaceTintColor: Colors.transparent, // matikan tint Material3
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-            ),
-          ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9E6D4), // oranye + 25 % opacity
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildSummary('${inv.totalCount}', 'item'),
+                      _buildSummary('${inv.lowStockCount}', 'stok menipis'),
+                      _buildSummary(
+                          formatCurrency(inv.totalValue), 'total nilai'),
+                    ],
+                  ),
+                ),
+              )),
 
           // ───── Search Bar ─────
           Padding(
@@ -87,8 +90,8 @@ class _InventoryPageState extends State<InventoryPage> {
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
                 hintText: 'Search',
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
@@ -127,8 +130,8 @@ class _InventoryPageState extends State<InventoryPage> {
               itemBuilder: (ctx, i) {
                 final it = filtered[i];
                 return Card(
-                  margin: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 6),
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   elevation: 2,
@@ -137,7 +140,9 @@ class _InventoryPageState extends State<InventoryPage> {
                     title: Text(it.name,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text('Stok: ${it.stock} ${it.unit}'),
-                    trailing: Text(formatCurrency(it.price),
+                    trailing: Text(
+                        formatCurrency(
+                            it.price * it.stock), //tampilan harga total card
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 16)),
                     onTap: () {
@@ -156,6 +161,38 @@ class _InventoryPageState extends State<InventoryPage> {
           ),
         ],
       ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddInventoryPage()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC6A26), // biru BRImo
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+              child: const Text(
+                'Tambah Stok',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -163,8 +200,7 @@ class _InventoryPageState extends State<InventoryPage> {
     return Column(
       children: [
         Text(value,
-            style:
-                const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         Text(label),
       ],
