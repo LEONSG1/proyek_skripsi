@@ -1,20 +1,27 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:intl/date_symbol_data_local.dart';          // ← ADD
 
 import 'providers/transaction_provider.dart';
 import 'providers/inventory_provider.dart';
+import 'providers/loan_debt_provider.dart';
+
 import 'presentation/pages/dashboard_page.dart';
 import 'presentation/pages/chart_page.dart';
 import 'presentation/pages/inventory_page.dart';
+import 'presentation/pages/loans_debts_page.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();               // ← ADD
+  await initializeDateFormatting('id_ID', null);           // ← ADD
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => InventoryProvider()),
+        ChangeNotifierProvider(create: (_) => LoanDebtProvider()),
       ],
       child: const MyApp(),
     ),
@@ -48,10 +55,11 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
+  final _pages = const [
     DashboardPage(),
     ChartPage(),
-    InventoryPage(),  // Tab baru untuk inventory
+    LoansDebtsPage(),
+    InventoryPage(),
   ];
 
   @override
@@ -59,9 +67,10 @@ class _MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,           // 4 item → fixed
         currentIndex: _currentIndex,
         selectedItemColor: Colors.orange[700],
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: (i) => setState(() => _currentIndex = i),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
@@ -70,6 +79,10 @@ class _MainNavigationState extends State<MainNavigation> {
           BottomNavigationBarItem(
             icon: Icon(Icons.pie_chart),
             label: 'Chart',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Hutang',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.inventory_2),

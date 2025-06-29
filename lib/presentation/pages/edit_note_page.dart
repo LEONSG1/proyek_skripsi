@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../data/models/transaction_model.dart';
 import '../../providers/transaction_provider.dart';
-import '../../main.dart';
+
 import 'category_picker_page.dart';
 import 'add_note_page.dart';      // untuk enum EntryType
 
