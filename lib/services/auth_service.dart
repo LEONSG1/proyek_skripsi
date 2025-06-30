@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../presentation/pages/main_navigation.dart';
-import '../presentation/pages/auth/login_page.dart';
+import '../presentation/pages/auth/login_page.dart';   // dipakai sign-out
+// MainNavigation TIDAK di-import langsung karena kita pakai route '/main'
 
 class AuthService {
-  // ───────────────────────── Sign-Up ─────────────────────────
+  /* ────────────── SIGN-UP ────────────── */
   Future<void> signup({
     required String email,
     required String password,
@@ -17,19 +17,19 @@ class AuthService {
         email: email,
         password: password,
       );
-      // sukses → pindah ke dashboard
+
+      // selesai daftar ⇒ pindah ke dashboard utama (route '/main')
       Navigator.pushReplacementNamed(context, '/main');
     } on FirebaseAuthException catch (e) {
-      String msg = switch (e.code) {
-        'weak-password'        => 'Password terlalu lemah.',
-        'email-already-in-use' => 'Email sudah terdaftar.',
-        _                      => 'Gagal mendaftar.',
-      };
-      _showToast(msg);
+      _showToast(
+        e.code == 'weak-password'
+            ? 'Password terlalu lemah.'
+            : 'Email sudah terdaftar.',
+      );
     }
   }
 
-  // ───────────────────────── Sign-In ─────────────────────────
+  /* ────────────── SIGN-IN ────────────── */
   Future<void> signin({
     required String email,
     required String password,
@@ -40,27 +40,27 @@ class AuthService {
         email: email,
         password: password,
       );
+
       Navigator.pushReplacementNamed(context, '/main');
     } on FirebaseAuthException catch (e) {
-      String msg = switch (e.code) {
-        'invalid-email'     => 'Email tidak ditemukan.',
-        'invalid-credential' => 'Password salah.',
-        _                   => 'Gagal login.',
-      };
-      _showToast(msg);
+      _showToast(
+        e.code == 'invalid-email'
+            ? 'Email tidak ditemukan.'
+            : 'Password salah.',
+      );
     }
   }
 
-  // ───────────────────────── Sign-Out ────────────────────────
+  /* ────────────── SIGN-OUT ───────────── */
   Future<void> signout({required BuildContext context}) async {
     await FirebaseAuth.instance.signOut();
     Navigator.pushReplacementNamed(context, '/login');
   }
 
-  // helper
-  void _showToast(String message) {
+  /* ────────────── HELPER ─────────────── */
+  void _showToast(String msg) {
     Fluttertoast.showToast(
-      msg: message,
+      msg: msg,
       toastLength: Toast.LENGTH_LONG,
       gravity: ToastGravity.SNACKBAR,
       backgroundColor: Colors.black54,

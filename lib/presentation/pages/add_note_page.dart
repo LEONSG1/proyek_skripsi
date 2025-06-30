@@ -6,7 +6,7 @@ import '../pages/category_picker_page.dart'; // sesuaikan path jika berbeda
 
 import '../../data/models/transaction_model.dart';
 import '../../providers/transaction_provider.dart';
-import '../../main.dart';
+
 
 enum EntryType { expense, income }
 
@@ -229,9 +229,8 @@ class _AddNotePageState extends State<AddNotePage> {
       );
       Provider.of<TransactionProvider>(context, listen: false)
           .addTransaction(tx);
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MyApp()),
-      );
+      Navigator.pop(context);     // ← cukup kembali ke halaman sebelumnya
+
     }
   }
 
