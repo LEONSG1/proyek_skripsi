@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../presentation/pages/auth/login_page.dart';   // dipakai sign-out
-// MainNavigation TIDAK di-import langsung karena kita pakai route '/main'
-
 class AuthService {
   /* ────────────── SIGN-UP ────────────── */
   Future<void> signup({
@@ -17,15 +14,23 @@ class AuthService {
         email: email,
         password: password,
       );
-
-      // selesai daftar ⇒ pindah ke dashboard utama (route '/main')
       Navigator.pushReplacementNamed(context, '/main');
     } on FirebaseAuthException catch (e) {
-      _showToast(
-        e.code == 'weak-password'
-            ? 'Password terlalu lemah.'
-            : 'Email sudah terdaftar.',
-      );
+      // Ganti kode di sini:
+      String msg;
+      if (e.code == 'weak-password') {
+        msg = 'Password terlalu lemah. Minimal 6 karakter.';
+      } else if (e.code == 'email-already-in-use') {
+        msg = 'Email sudah terdaftar.';
+      } else if (e.code == 'invalid-email') {
+        msg = 'Format email tidak valid.';
+      } else {
+        msg = 'Gagal mendaftar: ${e.message}';
+      }
+      _showToast(msg);
+    } catch (e) {
+      // fallback error umum
+      _showToast('Terjadi kesalahan. Coba lagi.');
     }
   }
 
@@ -40,14 +45,21 @@ class AuthService {
         email: email,
         password: password,
       );
-
       Navigator.pushReplacementNamed(context, '/main');
     } on FirebaseAuthException catch (e) {
-      _showToast(
-        e.code == 'invalid-email'
-            ? 'Email tidak ditemukan.'
-            : 'Password salah.',
-      );
+      String msg;
+      if (e.code == 'user-not-found' || e.code == 'invalid-email') {
+        msg = 'Email tidak ditemukan.';
+      } else if (e.code == 'wrong-password') {
+        msg = 'Password salah.';
+      } else if (e.code == 'too-many-requests') {
+        msg = 'Terlalu banyak percobaan. Coba lagi nanti.';
+      } else {
+        msg = 'Gagal login: ${e.message}';
+      }
+      _showToast(msg);
+    } catch (e) {
+      _showToast('Terjadi kesalahan. Coba lagi.');
     }
   }
 

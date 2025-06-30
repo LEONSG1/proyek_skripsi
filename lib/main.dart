@@ -1,71 +1,71 @@
+// lib/main.dart
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';             // ← tambahan
+import 'firebase_options.dart';                                // ← tambahan
+import 'package:provider/provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-import '../presentation/pages/main_navigation.dart';
-import '../presentation/pages/auth/login_page.dart';
+import 'providers/transaction_provider.dart';
+import 'providers/inventory_provider.dart';
+import 'providers/loan_debt_provider.dart';
 
-class AuthService {
-  // ───────────────────────── Sign-Up ─────────────────────────
-  Future<void> signup({
-    required String email,
-    required String password,
-    required BuildContext context,
-  }) async {
-    try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      // sukses → pindah ke dashboard
-      Navigator.pushReplacementNamed(context, '/main');
-    } on FirebaseAuthException catch (e) {
-      String msg = switch (e.code) {
-        'weak-password'        => 'Password terlalu lemah.',
-        'email-already-in-use' => 'Email sudah terdaftar.',
-        _                      => 'Gagal mendaftar.',
-      };
-      _showToast(msg);
-    }
-  }
+import 'presentation/pages/auth/login_page.dart';
+import 'presentation/pages/auth/signup_page.dart';
+import 'presentation/pages/main_navigation.dart';
+import 'presentation/pages/auth/auth_wrapper.dart';
 
-  // ───────────────────────── Sign-In ─────────────────────────
-  Future<void> signin({
-    required String email,
-    required String password,
-    required BuildContext context,
-  }) async {
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      Navigator.pushReplacementNamed(context, '/main');
-    } on FirebaseAuthException catch (e) {
-      String msg = switch (e.code) {
-        'invalid-email'     => 'Email tidak ditemukan.',
-        'invalid-credential' => 'Password salah.',
-        _                   => 'Gagal login.',
-      };
-      _showToast(msg);
-    }
-  }
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
 
-  // ───────────────────────── Sign-Out ────────────────────────
-  Future<void> signout({required BuildContext context}) async {
-    await FirebaseAuth.instance.signOut();
-    Navigator.pushReplacementNamed(context, '/login');
-  }
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+    FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+  );
 
-  // helper
-  void _showToast(String message) {
-    Fluttertoast.showToast(
-      msg: message,
-      toastLength: Toast.LENGTH_LONG,
-      gravity: ToastGravity.SNACKBAR,
-      backgroundColor: Colors.black54,
-      textColor: Colors.white,
-      fontSize: 14,
+  // ─── INISIALISASI FIREBASE ───────────────────────────────────────
+  
+  // ─────────────────────────────────────────────────────────────────
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TransactionProvider()),
+        ChangeNotifierProvider(create: (_) => InventoryProvider()),
+        ChangeNotifierProvider(create: (_) => LoanDebtProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Keuangan UMKM',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.orange,
+        useMaterial3: true,
+      ),
+
+      // 1) daftar semua route yang dipakai AuthService
+      routes: {
+        '/login': (_) =>  Login(),
+        '/signup': (_) =>  Signup(),
+        '/main': (_) => const MainNavigation(),
+      },
+
+      // 2) entry point: pakai wrapper yang cek status auth
+      home: const AuthWrapper(),
     );
   }
 }

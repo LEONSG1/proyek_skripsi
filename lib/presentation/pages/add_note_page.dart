@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../pages/category_picker_page.dart'; // sesuaikan path jika berbeda
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../pages/category_picker_page.dart';
 import '../../data/models/transaction_model.dart';
 import '../../providers/transaction_provider.dart';
-
 
 enum EntryType { expense, income }
 
@@ -18,7 +19,6 @@ class AddNotePage extends StatefulWidget {
 }
 
 class _AddNotePageState extends State<AddNotePage> {
-  /* ──────────────── STATE & CONTROLLERS ──────────────── */
   final _formKey = GlobalKey<FormState>();
   EntryType _entryType = EntryType.expense;
   String? _category;
@@ -49,7 +49,6 @@ class _AddNotePageState extends State<AddNotePage> {
     }
   }
 
-  /* ─────────────────────── BUILD ─────────────────────── */
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -65,7 +64,6 @@ class _AddNotePageState extends State<AddNotePage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            /* ===== TOGGLE ===== */
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: SegmentedButton<EntryType>(
@@ -88,8 +86,6 @@ class _AddNotePageState extends State<AddNotePage> {
                 ),
               ),
             ),
-
-            /* ===== FORM KARTU PUTIH ===== */
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -108,8 +104,6 @@ class _AddNotePageState extends State<AddNotePage> {
                 child: Column(
                   children: [
                     const SizedBox(height: 24),
-
-                    /* —— JUMLAH —— */
                     _FieldTile(
                       leading: const Icon(Icons.payments_outlined, size: 22),
                       child: TextFormField(
@@ -133,10 +127,6 @@ class _AddNotePageState extends State<AddNotePage> {
                             (v == null || v.isEmpty) ? 'Masukkan jumlah' : null,
                       ),
                     ),
-
-                    /* —— KATEGORI —— */
-                    /* —— KATEGORI —— */
-/* —— KATEGORI —— */
                     _NavTile(
                       icon: Icons.grid_view_rounded,
                       title: _category ?? 'Pilih Kategori',
@@ -146,16 +136,13 @@ class _AddNotePageState extends State<AddNotePage> {
                           context,
                           MaterialPageRoute(
                             builder: (_) => CategoryPickerPage(
-                              isExpense: _entryType ==
-                                  EntryType.expense, // ✅ param yang benar
+                              isExpense: _entryType == EntryType.expense,
                             ),
                           ),
                         );
                         if (picked != null) setState(() => _category = picked);
                       },
                     ),
-
-                    /* —— TANGGAL —— */
                     _NavTile(
                       icon: Icons.calendar_month,
                       title: _dateCtrl.text.isEmpty
@@ -164,8 +151,6 @@ class _AddNotePageState extends State<AddNotePage> {
                       isPlaceholder: _dateCtrl.text.isEmpty,
                       onTap: _pickDate,
                     ),
-
-                    /* —— DESKRIPSI —— */
                     _FieldTile(
                       leading: const Icon(Icons.notes),
                       child: TextFormField(
@@ -178,8 +163,6 @@ class _AddNotePageState extends State<AddNotePage> {
                       ),
                     ),
                     const SizedBox(height: 24),
-
-                    /* —— SIMPAN —— */
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -205,8 +188,7 @@ class _AddNotePageState extends State<AddNotePage> {
     );
   }
 
-  /* ───────────────────── SUBMIT ───────────────────── */
-  void _onSubmit() {
+  Future<void> _onSubmit() async {
     if (_formKey.currentState!.validate()) {
       if (_pickedDate == null) {
         ScaffoldMessenger.of(context)
@@ -227,10 +209,25 @@ class _AddNotePageState extends State<AddNotePage> {
         amount: double.parse(_amountCtrl.text),
         type: _entryType == EntryType.expense ? 'Expense' : 'Income',
       );
+
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('transactions')
+          .add({
+        'amount': tx.amount,
+        'type': tx.type,
+        'description': tx.description,
+        'category': tx.category,
+        'date': tx.date,
+      });
+
       Provider.of<TransactionProvider>(context, listen: false)
           .addTransaction(tx);
-      Navigator.pop(context);     // ← cukup kembali ke halaman sebelumnya
 
+      Navigator.pop(context);
     }
   }
 
@@ -242,8 +239,6 @@ class _AddNotePageState extends State<AddNotePage> {
     super.dispose();
   }
 }
-
-/* ──────────────── WIDGET UTILITAS ──────────────── */
 
 class _FieldTile extends StatelessWidget {
   final Widget leading;
@@ -262,9 +257,7 @@ class _FieldTile extends StatelessWidget {
         ),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          /* >>> lebar & posisi sama dengan ListTile <<< */
           SizedBox(
             width: 40,
             child: Align(
@@ -274,7 +267,7 @@ class _FieldTile extends StatelessWidget {
                   : leading,
             ),
           ),
-          const SizedBox(width: 16), // sama dgn horizontalTitleGap
+          const SizedBox(width: 16),
           Expanded(child: child),
         ],
       ),
@@ -297,7 +290,7 @@ class _NavTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
         leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-        minLeadingWidth: 40, // konsisten dgn FieldTile
+        minLeadingWidth: 40,
         title: Text(
           title,
           style: TextStyle(

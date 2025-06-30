@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../data/models/transaction_model.dart';
 import '../../providers/transaction_provider.dart';
@@ -192,26 +193,32 @@ class _EditNotePageState extends State<EditNotePage> {
     }
   }
 
-  void _onUpdate() {
-    final updated = TransactionModel(
-      id: widget.transaction.id,
-      date: _pickedDate,
-      category: _category ?? widget.transaction.category,
-      description: _descCtrl.text,
-      amount: double.tryParse(_amountCtrl.text) ?? widget.transaction.amount,
-      type: _entryType == EntryType.expense ? 'Expense' : 'Income',
-    );
+void _onUpdate() async {
+  final updated = TransactionModel(
+    id: widget.transaction.id,
+    date: _pickedDate,
+    category: _category ?? widget.transaction.category,
+    description: _descCtrl.text,
+    amount: double.tryParse(_amountCtrl.text) ?? widget.transaction.amount,
+    type: _entryType == EntryType.expense ? 'Expense' : 'Income',
+  );
 
-    Provider.of<TransactionProvider>(context, listen: false)
-        .updateTransaction(updated);                   // method yang ada
-    Navigator.pop(context);
-  }
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+  await Provider.of<TransactionProvider>(context, listen: false)
+      .updateTransaction(uid, updated);
 
-  void _onDelete() {
-    Provider.of<TransactionProvider>(context, listen: false)
-        .deleteTransaction(widget.transaction.id);     // ganti nama sesuai provider
-    Navigator.pop(context);
-  }
+  Navigator.pop(context);
+}
+
+
+void _onDelete() async {
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+  await Provider.of<TransactionProvider>(context, listen: false)
+      .deleteTransaction(uid, widget.transaction.id);
+
+  Navigator.pop(context);
+}
+
 
   @override
   void dispose() {
