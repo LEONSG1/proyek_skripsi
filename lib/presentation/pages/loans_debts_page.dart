@@ -296,7 +296,7 @@ class _LoansDebtsPageState extends State<LoansDebtsPage> {
                 context,
                 MaterialPageRoute(builder: (_) => const AddLoanDebtPage()),
               ),
-              child: const Text('Tambah Stok',
+              child: const Text('Tambah Utang',
                   style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

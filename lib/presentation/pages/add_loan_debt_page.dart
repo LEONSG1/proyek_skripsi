@@ -57,8 +57,9 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Record'),
+        title: const Text('Tambah Utang / Piutang'),
         backgroundColor: Colors.orange[700],
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
