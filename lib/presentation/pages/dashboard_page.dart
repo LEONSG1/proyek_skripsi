@@ -28,20 +28,32 @@ class _DashboardPageState extends State<DashboardPage> {
   late String? _selectedType;
   late CycleType _selectedCycle;
 
-  @override
-  void initState() {
-    super.initState();
-    _selectedType = _lastType;
-    _selectedCycle = _lastCycle;
-    _searchController.addListener(() => setState(() {}));
+TransactionProvider? _txProvider;
 
-    // ✅ Ambil data transaksi dari Firestore berdasarkan UID user login
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      Provider.of<TransactionProvider>(context, listen: false)
-          .fetchFromFirebase(uid);
-    }
+
+  @override
+void initState() {
+  super.initState();
+
+  _selectedType  = _lastType;
+  _selectedCycle = _lastCycle;
+  _searchController.addListener(() => setState(() {}));
+
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid != null) {
+    _txProvider = Provider.of<TransactionProvider>(context, listen: false);
+    _txProvider!.listenToTransactions(uid);
   }
+}
+
+@override
+void dispose() {
+  _txProvider?.cancelSubscription(); // ✅ Aman
+  _searchController.dispose();
+  super.dispose();
+}
+
+
 
   DateTime _cutoffDate(CycleType f) {
     final now = DateTime.now();

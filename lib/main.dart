@@ -44,6 +44,35 @@ Future<void> main() async {
   );
 }
 
+// Future<void> main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+
+//   // Inisialisasi format lokal Indonesia
+//   await initializeDateFormatting('id_ID', null);
+
+//   // Inisialisasi Firebase
+//   await Firebase.initializeApp(
+//     options: DefaultFirebaseOptions.currentPlatform,
+//   );
+
+//   // ✅ Aktifkan penyimpanan offline Firestore
+//   FirebaseFirestore.instance.settings = const Settings(
+//     persistenceEnabled: true,
+//   );
+
+//   // Jalankan aplikasi dengan MultiProvider
+//   runApp(
+//     MultiProvider(
+//       providers: [
+//         ChangeNotifierProvider(create: (_) => TransactionProvider()),
+//         ChangeNotifierProvider(create: (_) => InventoryProvider()),
+//         ChangeNotifierProvider(create: (_) => LoanDebtProvider()),
+//       ],
+//       child: const MyApp(),
+//     ),
+//   );
+// }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

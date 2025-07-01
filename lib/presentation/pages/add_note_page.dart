@@ -1,3 +1,4 @@
+// lib/presentation/pages/add_note_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -201,34 +202,35 @@ class _AddNotePageState extends State<AddNotePage> {
         return;
       }
 
-      final tx = TransactionModel(
-        id: UniqueKey().toString(),
-        date: _pickedDate!,
-        category: _category!,
-        description: _descCtrl.text,
-        amount: double.parse(_amountCtrl.text),
-        type: _entryType == EntryType.expense ? 'Expense' : 'Income',
-      );
-
-      final uid = FirebaseAuth.instance.currentUser!.uid;
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('transactions')
-          .add({
-        'amount': tx.amount,
-        'type': tx.type,
-        'description': tx.description,
-        'category': tx.category,
-        'date': tx.date,
-      });
-
-      Provider.of<TransactionProvider>(context, listen: false)
-          .addTransaction(tx);
-
-      Navigator.pop(context);
+      await _saveTransaction();
     }
+  }
+
+  Future<void> _saveTransaction() async {
+    final tx = TransactionModel(
+      id: UniqueKey().toString(),
+      date: _pickedDate!,
+      category: _category!,
+      description: _descCtrl.text,
+      amount: double.parse(_amountCtrl.text),
+      type: _entryType == EntryType.expense ? 'Expense' : 'Income',
+    );
+
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    // Tambahkan ke UI lokal
+    Provider.of<TransactionProvider>(context, listen: false)
+        .addTransaction(tx);
+
+    // Simpan ke Firestore, dukung offline
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('transactions')
+        .add(tx.toJson());
+
+    // Langsung tutup halaman, walau offline
+    Navigator.pop(context);
   }
 
   @override

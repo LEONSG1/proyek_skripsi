@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../data/models/transaction_model.dart';
 
 class TransactionProvider extends ChangeNotifier {
   final List<TransactionModel> _transactions = [];
+  StreamSubscription? _subscription; // 👈 Tambahan: untuk real-time listener
 
   List<TransactionModel> get transactions => _transactions;
 
@@ -13,7 +15,6 @@ class TransactionProvider extends ChangeNotifier {
   }
 
   Future<void> updateTransaction(String uid, TransactionModel updated) async {
-    // Update ke Firestore
     await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
@@ -21,7 +22,6 @@ class TransactionProvider extends ChangeNotifier {
         .doc(updated.id)
         .update(updated.toJson());
 
-    // Update di memori lokal
     final index = _transactions.indexWhere((tx) => tx.id == updated.id);
     if (index != -1) {
       _transactions[index] = updated;
@@ -30,7 +30,6 @@ class TransactionProvider extends ChangeNotifier {
   }
 
   Future<void> deleteTransaction(String uid, String docId) async {
-    // 1. Hapus dari Firestore
     await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
@@ -38,12 +37,11 @@ class TransactionProvider extends ChangeNotifier {
         .doc(docId)
         .delete();
 
-    // 2. Hapus dari memory lokal
     _transactions.removeWhere((tx) => tx.id == docId);
     notifyListeners();
   }
 
-  /// ✅ Fetch ulang data dari Firestore setelah login
+  /// 🟡 Tidak wajib lagi dipakai jika sudah pakai listenToTransactions()
   Future<void> fetchFromFirebase(String uid) async {
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
@@ -73,7 +71,44 @@ class TransactionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// ✅ Bersihkan data lokal saat logout
+  /// ✅ Listener real-time untuk sinkronisasi otomatis (online/offline)
+  void listenToTransactions(String uid) {
+    _subscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('transactions')
+        .orderBy('date', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      final data = snapshot.docs.map((doc) {
+        final d = doc.data();
+        return TransactionModel(
+          id: doc.id,
+          amount: (d['amount'] as num).toDouble(),
+          type: d['type'] as String,
+          description: d['description'] ?? '',
+          category: d['category'] ?? '',
+          date: d['date'] is Timestamp
+              ? (d['date'] as Timestamp).toDate()
+              : DateTime.parse(d['date']),
+        );
+      }).toList();
+
+      _transactions
+        ..clear()
+        ..addAll(data);
+
+      notifyListeners();
+    });
+  }
+
+  /// ✅ Hentikan subscription saat logout atau dispose
+  void cancelSubscription() {
+    _subscription?.cancel();
+    _subscription = null;
+  }
+
+  /// ✅ Bersihkan data lokal (misalnya saat logout)
   void clear() {
     _transactions.clear();
     notifyListeners();

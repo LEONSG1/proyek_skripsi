@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:proyek_baru/services/auth_service.dart';
 import 'login_page.dart';
@@ -148,8 +149,16 @@ class Signup extends StatelessWidget {
           return;
         }
 
-        await AuthService()
-            .signup(email: email, password: password, context: context);
+        try {
+          await AuthService()
+              .signup(email: email, password: password, context: context);
+        } on FirebaseAuthException catch (e) {
+          if (e.code == 'email-already-in-use') {
+            Fluttertoast.showToast(msg: 'Email sudah terdaftar');
+          } else {
+            Fluttertoast.showToast(msg: 'Gagal mendaftar: ${e.message}');
+          }
+        }
       },
 
       child: const Text("Sign Up"),
