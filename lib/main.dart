@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 // lib/main.dart
 
-=======
->>>>>>> 4437616 (update data)
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';             // ← tambahan
@@ -47,7 +44,6 @@ Future<void> main() async {
   );
 }
 
-<<<<<<< HEAD
 // Future<void> main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
 
@@ -76,8 +72,6 @@ Future<void> main() async {
 //     ),
 //   );
 // }
-=======
->>>>>>> 4437616 (update data)
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

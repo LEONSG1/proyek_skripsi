@@ -59,13 +59,15 @@ class _LoansDebtsPageState extends State<LoansDebtsPage> {
       return okDate && okStatus;
     }).toList();
 
-    final totalLoan = list
-        .where((e) => e.type == LdType.loan)
-        .fold<double>(0, (p, e) => p + e.amount);
-    final totalDebt = list
-        .where((e) => e.type == LdType.debt)
-        .fold<double>(0, (p, e) => p + e.amount);
-    final balance = totalLoan - totalDebt;
+    final totalDebt = provider.data
+    .where((e) => e.type == LdType.debt && e.status == LdStatus.unpaid)
+    .fold<double>(0, (p, e) => p + e.amount);
+
+final totalLoan = provider.data
+    .where((e) => e.type == LdType.loan && e.status == LdStatus.unpaid)
+    .fold<double>(0, (p, e) => p + e.amount);
+
+final balance = totalLoan - totalDebt;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
@@ -346,9 +348,10 @@ class _Badge extends StatelessWidget {
 
   @override
   Widget build(BuildContext ctx) {
+    print('[DEBUG] Loaded data → type: ${m.type}, status: ${m.status}'); // Tambahkan ini
     final txt = m.status == LdStatus.paid
         ? 'Paid'
-        : 'Unpaid (${m.type == LdType.loan ? 'Debt' : 'Loan'})';
+        : 'Unpaid (${m.type == LdType.loan ? 'Loan' : 'Debt'})';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -359,3 +362,5 @@ class _Badge extends StatelessWidget {
     );
   }
 }
+
+

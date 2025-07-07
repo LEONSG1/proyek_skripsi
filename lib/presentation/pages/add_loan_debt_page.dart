@@ -7,11 +7,11 @@ import '../../providers/loan_debt_provider.dart';
 import '../../data/models/loan_debt_model.dart';
 
 /* warna ungu sama */
-const kPurple     = Color(0xFF7C5CFF);
+const kPurple = Color(0xFF7C5CFF);
 const kPurpleGrad = LinearGradient(
   colors: [Color(0xFF9F7BFF), Color(0xFF7C5CFF)],
   begin: Alignment.topCenter,
-  end  : Alignment.bottomCenter,
+  end: Alignment.bottomCenter,
 );
 
 class AddLoanDebtPage extends StatefulWidget {
@@ -22,14 +22,15 @@ class AddLoanDebtPage extends StatefulWidget {
 }
 
 class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
-  final _fKey    = GlobalKey<FormState>();
-  final _dateC   = TextEditingController();
-  final _nameC   = TextEditingController();
-  final _descC   = TextEditingController();
+  final _fKey = GlobalKey<FormState>();
+  final _dateC = TextEditingController();
+  final _nameC = TextEditingController();
+  final _descC = TextEditingController();
   final _amountC = TextEditingController();
 
   DateTime _selectedDate = DateTime.now();
-  LdType   _type   = LdType.loan;
+  LdType? _type;
+
   LdStatus _status = LdStatus.unpaid;
 
   @override
@@ -67,7 +68,7 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
           key: _fKey,
           child: ListView(
             children: [
-              const  _Label('Date'),
+              const _Label('Date'),
               TextFormField(
                 controller: _dateC,
                 readOnly: true,
@@ -77,15 +78,14 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
                 ),
               ),
               const SizedBox(height: 12),
-              const  _Label('Counterparty'),
+              const _Label('Counterparty'),
               TextFormField(
                 controller: _nameC,
                 decoration: _fieldDec(),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Required' : null,
+                validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
               ),
               const SizedBox(height: 12),
-              const  _Label('Description'),
+              const _Label('Description'),
               TextFormField(
                 controller: _descC,
                 maxLines: 3,
@@ -93,50 +93,55 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
               ),
               const SizedBox(height: 18),
               const _Label('Amount'),
-      Row(
-        children: [
-          // ── kolom Amount ───────────────────────────────
-          Flexible(
-      flex: 2,
-      child: TextFormField(
-        controller: _amountC,
-        keyboardType: TextInputType.number,
-        decoration: _fieldDec(prefix: const Text('Rp')),   // ← bebas ‘Rp’ / ‘$’
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,          // ← hanya angka
-          // jika mau izinkan desimal 2 digit, pakai baris di bawah
-          // FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-        ],
-        validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
-      ),
-          ),
-          const SizedBox(width: 12),
-      
-          // ── Toggle Loan / Debt ──────────────────────────
-          Flexible(
-      flex: 3,
-      child: ToggleButtons(
-        isSelected: [_type == LdType.loan, _type == LdType.debt],
-        borderRadius: BorderRadius.circular(6),
-        onPressed: (i) =>
-            setState(() => _type = i == 0 ? LdType.loan : LdType.debt),
-        children: const [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 18),
-            child: Text('Loan'),
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 18),
-            child: Text('Debt'),
-          ),
-        ],
-      ),
-          ),
-        ],
-      ),
-      
+              Row(
+                children: [
+                  // ── kolom Amount ───────────────────────────────
+                  Flexible(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _amountC,
+                      keyboardType: TextInputType.number,
+                      decoration: _fieldDec(
+                          prefix: const Text('Rp')), // ← bebas ‘Rp’ / ‘$’
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly, // ← hanya angka
+                        // jika mau izinkan desimal 2 digit, pakai baris di bawah
+                        // FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                      ],
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Required' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // ── Toggle Loan / Debt ──────────────────────────
+                  Flexible(
+                      flex: 3,
+                      child: ToggleButtons(
+                        isSelected: [
+                          _type == LdType.debt,
+                          _type == LdType.loan
+                        ],
+                        onPressed: (i) {
+                          print("User clicked toggle index: $i");
+                          setState(
+                              () => _type = i == 0 ? LdType.debt : LdType.loan);
+                        },
+                        children: const [
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 18),
+                            child: Text('Debt'), // ← kiri
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 18),
+                            child: Text('Loan'), // ← kanan
+                          ),
+                        ],
+                      )),
+                ],
+              ),
               const SizedBox(height: 18),
-              const  _Label('Status'),
+              const _Label('Status'),
               ToggleButtons(
                 isSelected: [
                   _status == LdStatus.paid,
@@ -145,8 +150,8 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
                 borderRadius: BorderRadius.circular(8),
                 selectedColor: Colors.white,
                 fillColor: kPurple,
-                onPressed: (i) =>
-                    setState(() => _status = i == 0 ? LdStatus.paid : LdStatus.unpaid),
+                onPressed: (i) => setState(
+                    () => _status = i == 0 ? LdStatus.paid : LdStatus.unpaid),
                 children: const [
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 38),
@@ -208,14 +213,21 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
   void _save() {
     if (!_fKey.currentState!.validate()) return;
 
+    if (_type == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Silakan pilih tipe terlebih dahulu')),
+      );
+      return;
+    }
+
     final m = LoanDebtModel(
-      id          : UniqueKey().toString(),
-      date        : _selectedDate,
+      id: UniqueKey().toString(),
+      date: _selectedDate,
       counterparty: _nameC.text,
-      description : _descC.text,
-      amount      : double.parse(_amountC.text),
-      type        : _type,
-      status      : _status,
+      description: _descC.text,
+      amount: double.parse(_amountC.text),
+      type: _type!,
+      status: _status,
     );
 
     Provider.of<LoanDebtProvider>(context, listen: false).add(m);
