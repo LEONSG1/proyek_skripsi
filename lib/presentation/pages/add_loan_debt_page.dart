@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -210,29 +212,40 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
         ),
       );
 
-  void _save() {
-    if (!_fKey.currentState!.validate()) return;
+  void _save() async {
+  if (!_fKey.currentState!.validate()) return;
 
-    if (_type == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan pilih tipe terlebih dahulu')),
-      );
-      return;
-    }
-
-    final m = LoanDebtModel(
-      id: UniqueKey().toString(),
-      date: _selectedDate,
-      counterparty: _nameC.text,
-      description: _descC.text,
-      amount: double.parse(_amountC.text),
-      type: _type!,
-      status: _status,
+  if (_type == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Silakan pilih tipe terlebih dahulu')),
     );
-
-    Provider.of<LoanDebtProvider>(context, listen: false).add(m);
-    Navigator.pop(context);
+    return;
   }
+
+  final m = LoanDebtModel(
+    id: UniqueKey().toString(),
+    date: _selectedDate,
+    counterparty: _nameC.text,
+    description: _descC.text,
+    amount: double.parse(_amountC.text),
+    type: _type!,
+    status: _status,
+  );
+
+  // Tambah ke provider lokal
+  Provider.of<LoanDebtProvider>(context, listen: false).add(m);
+
+  // Simpan ke Firebase
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .collection('loan_debts')
+      .add(m.toJson());
+
+  Navigator.pop(context);
+}
+
 }
 
 class _Label extends StatelessWidget {

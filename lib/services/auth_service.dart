@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,13 +11,15 @@ class AuthService {
     required BuildContext context,
   }) async {
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      await _saveUserToFirestore(credential.user!); // ⬅️ Tambahkan ini
+
       Navigator.pushReplacementNamed(context, '/main');
     } on FirebaseAuthException catch (e) {
-      // Ganti kode di sini:
       String msg;
       if (e.code == 'weak-password') {
         msg = 'Password terlalu lemah. Minimal 6 karakter.';
@@ -29,7 +32,6 @@ class AuthService {
       }
       _showToast(msg);
     } catch (e) {
-      // fallback error umum
       _showToast('Terjadi kesalahan. Coba lagi.');
     }
   }
@@ -67,6 +69,19 @@ class AuthService {
   Future<void> signout({required BuildContext context}) async {
     await FirebaseAuth.instance.signOut();
     Navigator.pushReplacementNamed(context, '/login');
+  }
+
+  /* ─────────── SAVE USER TO FIRESTORE ─────────── */
+  Future<void> _saveUserToFirestore(User user) async {
+    final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final doc = await docRef.get();
+
+    if (!doc.exists) {
+      await docRef.set({
+        'email': user.email,
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+    }
   }
 
   /* ────────────── HELPER ─────────────── */

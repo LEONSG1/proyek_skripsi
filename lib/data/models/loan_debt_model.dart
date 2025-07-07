@@ -1,17 +1,13 @@
-// ================================================
-//  Model data catatan Hutang / Piutang
-// ================================================
-
-enum LdType   { loan, debt }              // Loan = uang dipinjamkan, Debt = uang dipinjam
+enum LdType   { loan, debt }              // loan = meminjamkan, debt = meminjam
 enum LdStatus { unpaid, paid }
 
 class LoanDebtModel {
-  final String   id;
+  final String id;
   final DateTime date;
-  final String   counterparty;            // Nama pihak (pemilik / peminjam)
-  final String   description;
-  final double   amount;
-  final LdType   type;
+  final String counterparty;              // Pihak yang terkait
+  final String description;
+  final double amount;
+  final LdType type;
   final LdStatus status;
 
   LoanDebtModel({
@@ -24,46 +20,47 @@ class LoanDebtModel {
     required this.status,
   });
 
-  /* ───────────── copyWith (baru) ───────────── */
   LoanDebtModel copyWith({
-    String?   id,
+    String? id,
     DateTime? date,
-    String?   counterparty,
-    String?   description,
-    double?   amount,
-    LdType?   type,
+    String? counterparty,
+    String? description,
+    double? amount,
+    LdType? type,
     LdStatus? status,
   }) {
     return LoanDebtModel(
-      id          : id          ?? this.id,
-      date        : date        ?? this.date,
-      counterparty: counterparty?? this.counterparty,
-      description : description ?? this.description,
-      amount      : amount      ?? this.amount,
-      type        : type        ?? this.type,
-      status      : status      ?? this.status,
+      id: id ?? this.id,
+      date: date ?? this.date,
+      counterparty: counterparty ?? this.counterparty,
+      description: description ?? this.description,
+      amount: amount ?? this.amount,
+      type: type ?? this.type,
+      status: status ?? this.status,
     );
   }
-  /* ──────────────────────────────────────────── */
 
-  /* ---------- helper map<->obj (jika kelak simpan ke Firestore) ---------- */
+  /// 🔁 From Firestore (string ISO date)
+  factory LoanDebtModel.fromJson(Map<String, dynamic> json) {
+    return LoanDebtModel(
+      id: json['id'] ?? '',
+      date: DateTime.parse(json['date']),
+      counterparty: json['counterparty'] ?? '',
+      description: json['description'] ?? '',
+      amount: (json['amount'] as num).toDouble(),
+      type: LdType.values.byName(json['type']),
+      status: LdStatus.values.byName(json['status']),
+    );
+  }
+
+  /// 🔁 To Firestore (string ISO date)
   Map<String, dynamic> toJson() => {
-        'id'          : id,
-        'date'        : date.millisecondsSinceEpoch,
+        'id': id,
+        'date': date.toIso8601String(),        // ⬅️ simpan sebagai ISO string
         'counterparty': counterparty,
-        'description' : description,
-        'amount'      : amount,
-        'type'        : type.name,
-        'status'      : status.name,
+        'description': description,
+        'amount': amount,
+        'type': type.name,
+        'status': status.name,
       };
-
-  factory LoanDebtModel.fromJson(Map<String, dynamic> j) => LoanDebtModel(
-        id          : j['id'],
-        date        : DateTime.fromMillisecondsSinceEpoch(j['date']),
-        counterparty: j['counterparty'],
-        description : j['description'],
-        amount      : (j['amount'] as num).toDouble(),
-        type        : LdType.values.byName(j['type']),
-        status      : LdStatus.values.byName(j['status']),
-      );
 }
