@@ -28,32 +28,29 @@ class _DashboardPageState extends State<DashboardPage> {
   late String? _selectedType;
   late CycleType _selectedCycle;
 
-TransactionProvider? _txProvider;
-
+  TransactionProvider? _txProvider;
 
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  _selectedType  = _lastType;
-  _selectedCycle = _lastCycle;
-  _searchController.addListener(() => setState(() {}));
+    _selectedType = _lastType;
+    _selectedCycle = _lastCycle;
+    _searchController.addListener(() => setState(() {}));
 
-  final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid != null) {
-    _txProvider = Provider.of<TransactionProvider>(context, listen: false);
-    _txProvider!.listenToTransactions(uid);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      _txProvider = Provider.of<TransactionProvider>(context, listen: false);
+      _txProvider!.listenToTransactions(uid);
+    }
   }
-}
 
-@override
-void dispose() {
-  _txProvider?.cancelSubscription(); // ✅ Aman
-  _searchController.dispose();
-  super.dispose();
-}
-
-
+  @override
+  void dispose() {
+    _txProvider?.cancelSubscription(); // ✅ Aman
+    _searchController.dispose();
+    super.dispose();
+  }
 
   DateTime _cutoffDate(CycleType f) {
     final now = DateTime.now();
@@ -226,6 +223,7 @@ void dispose() {
                         onSelected: (value) {
                           if (value == 'logout') {
                             AuthService().signout(context: context);
+
                           }
                         },
                         itemBuilder: (_) => const [

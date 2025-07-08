@@ -1,4 +1,3 @@
-// lib/presentation/pages/inventory_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/inventory_provider.dart';
@@ -21,6 +20,8 @@ class _InventoryPageState extends State<InventoryPage> {
   Widget build(BuildContext context) {
     final inv = context.watch<InventoryProvider>();
 
+    print('[InventoryPage] Total items loaded: ${inv.items.length}');
+
     // kumpulkan daftar kategori unik
     final categories = <String>{
       'Semua',
@@ -39,6 +40,8 @@ class _InventoryPageState extends State<InventoryPage> {
       return true;
     }).toList();
 
+    print('[InventoryPage] Filtered items: ${filtered.length}');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -56,32 +59,31 @@ class _InventoryPageState extends State<InventoryPage> {
         children: [
           // ───── Top Card ─────
           Padding(
-              padding: const EdgeInsets.all(16),
-              child: Card(
-                color: Colors.transparent, // biarkan transparan
-                surfaceTintColor: Colors.transparent, // matikan tint Material3
-                elevation: 0,
-                shape: RoundedRectangleBorder(
+            padding: const EdgeInsets.all(16),
+            child: Card(
+              color: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9E6D4),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9E6D4), // oranye + 25 % opacity
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildSummary('${inv.totalCount}', 'item'),
-                      _buildSummary('${inv.lowStockCount}', 'stok menipis'),
-                      _buildSummary(
-                          formatCurrency(inv.totalValue), 'total nilai'),
-                    ],
-                  ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildSummary('${inv.totalCount}', 'item'),
+                    _buildSummary('${inv.lowStockCount}', 'stok menipis'),
+                    _buildSummary(formatCurrency(inv.totalValue), 'total nilai'),
+                  ],
                 ),
-              )),
+              ),
+            ),
+          ),
 
           // ───── Search Bar ─────
           Padding(
@@ -90,8 +92,7 @@ class _InventoryPageState extends State<InventoryPage> {
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
                 hintText: 'Search',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
@@ -129,11 +130,13 @@ class _InventoryPageState extends State<InventoryPage> {
               itemCount: filtered.length,
               itemBuilder: (ctx, i) {
                 final it = filtered[i];
+                print('[InventoryPage] Render item: ${it.name}');
+
                 return Card(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 2,
                   child: ListTile(
                     leading: Icon(it.icon, color: Colors.green[700]),
@@ -141,12 +144,11 @@ class _InventoryPageState extends State<InventoryPage> {
                         style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text('Stok: ${it.stock} ${it.unit}'),
                     trailing: Text(
-                        formatCurrency(
-                            it.price * it.stock), //tampilan harga total card
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+                      formatCurrency(it.price * it.stock),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
                     onTap: () {
-                      // navigasi ke halaman edit item
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -175,7 +177,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFDC6A26), // biru BRImo
+                backgroundColor: const Color(0xFFDC6A26),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

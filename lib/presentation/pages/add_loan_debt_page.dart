@@ -232,8 +232,8 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
     status: _status,
   );
 
-  // Tambah ke provider lokal
-  Provider.of<LoanDebtProvider>(context, listen: false).add(m);
+  
+
 
   // Simpan ke Firebase
   final uid = FirebaseAuth.instance.currentUser!.uid;

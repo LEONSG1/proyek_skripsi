@@ -216,21 +216,12 @@ class _AddNotePageState extends State<AddNotePage> {
       type: _entryType == EntryType.expense ? 'Expense' : 'Income',
     );
 
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    
 
     // Tambahkan ke UI lokal
-    Provider.of<TransactionProvider>(context, listen: false)
-        .addTransaction(tx);
+    await Provider.of<TransactionProvider>(context, listen: false)
+    .saveTransaction(tx);
 
-    // Simpan ke Firestore, dukung offline
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('transactions')
-        .add(tx.toJson());
-
-    // Langsung tutup halaman, walau offline
-    Navigator.pop(context);
   }
 
   @override

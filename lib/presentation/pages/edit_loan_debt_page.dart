@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -27,12 +29,12 @@ class _EditLoanDebtPageState extends State<EditLoanDebtPage> {
   void initState() {
     super.initState();
     final m = widget.model;
-    _date    = m.date;
-    _nameC   = TextEditingController(text: m.counterparty);
-    _descC   = TextEditingController(text: m.description);
+    _date = m.date;
+    _nameC = TextEditingController(text: m.counterparty);
+    _descC = TextEditingController(text: m.description);
     _amountC = TextEditingController(text: m.amount.toStringAsFixed(0));
-    _type    = m.type;
-    _status  = m.status;
+    _type = m.type;
+    _status = m.status;
   }
 
   InputDecoration _dec(String label) => InputDecoration(
@@ -44,25 +46,34 @@ class _EditLoanDebtPageState extends State<EditLoanDebtPage> {
     final d = await showDatePicker(
       context: context,
       initialDate: _date,
-      firstDate : DateTime(2000),
-      lastDate  : DateTime(2100),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
     );
     if (d != null) setState(() => _date = d);
   }
 
-  void _update() {
+  void _update() async {
     if (!_key.currentState!.validate()) return;
 
     final m = widget.model.copyWith(
-      date        : _date,
+      date: _date,
       counterparty: _nameC.text.trim(),
-      description : _descC.text.trim(),
-      amount      : double.parse(_amountC.text),
-      type        : _type,
-      status      : _status,
+      description: _descC.text.trim(),
+      amount: double.parse(_amountC.text),
+      type: _type,
+      status: _status,
     );
 
-    context.read<LoanDebtProvider>().update(m);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('loan_debts')
+          .doc(m.id)
+          .set(m.toJson());
+    }
+
     Navigator.pop(context);
   }
 
@@ -73,12 +84,23 @@ class _EditLoanDebtPageState extends State<EditLoanDebtPage> {
         title: const Text('Delete record?'),
         content: const Text('This action cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () {
-              context.read<LoanDebtProvider>().remove(widget.model.id);
-              Navigator.pop(context);   // close dialog
-              Navigator.pop(context);   // close page
+            onPressed: () async {
+              final uid = FirebaseAuth.instance.currentUser?.uid;
+              if (uid != null) {
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(uid)
+                    .collection('loan_debts')
+                    .doc(widget.model.id)
+                    .delete();
+              }
+
+              Navigator.pop(context); // close dialog
+              Navigator.pop(context); // close page
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete'),
@@ -145,7 +167,7 @@ class _EditLoanDebtPageState extends State<EditLoanDebtPage> {
               TextFormField(
                 controller: _nameC,
                 decoration: _dec('Counterparty'),
-                validator: (v) => v==null||v.isEmpty ? 'Required' : null,
+                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 18),
 
@@ -168,20 +190,25 @@ class _EditLoanDebtPageState extends State<EditLoanDebtPage> {
                       controller: _amountC,
                       keyboardType: TextInputType.number,
                       decoration: _dec(''),
-                      validator: (v)=>
-                          v==null||v.isEmpty? 'Required': null,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Required' : null,
                     ),
                   ),
                   const SizedBox(width: 12),
                   SizedBox(
                     height: 40,
                     child: ToggleButtons(
-                      isSelected: [_type==LdType.loan, _type==LdType.debt],
-                      onPressed: (i)=>setState(()=>_type = i==0?LdType.loan:LdType.debt),
+                      isSelected: [_type == LdType.loan, _type == LdType.debt],
+                      onPressed: (i) => setState(
+                          () => _type = i == 0 ? LdType.loan : LdType.debt),
                       borderRadius: BorderRadius.circular(6),
                       children: const [
-                        Padding(padding: EdgeInsets.symmetric(horizontal:18),child:Text('Loan')),
-                        Padding(padding: EdgeInsets.symmetric(horizontal:18),child:Text('Debt')),
+                        Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 18),
+                            child: Text('Loan')),
+                        Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 18),
+                            child: Text('Debt')),
                       ],
                     ),
                   )
@@ -195,12 +222,20 @@ class _EditLoanDebtPageState extends State<EditLoanDebtPage> {
               SizedBox(
                 height: 40,
                 child: ToggleButtons(
-                  isSelected: [_status==LdStatus.paid,_status==LdStatus.unpaid],
-                  onPressed: (i)=>setState(()=>_status = i==0?LdStatus.paid:LdStatus.unpaid),
+                  isSelected: [
+                    _status == LdStatus.paid,
+                    _status == LdStatus.unpaid
+                  ],
+                  onPressed: (i) => setState(
+                      () => _status = i == 0 ? LdStatus.paid : LdStatus.unpaid),
                   borderRadius: BorderRadius.circular(6),
                   children: const [
-                    Padding(padding: EdgeInsets.symmetric(horizontal:25),child:Text('Paid')),
-                    Padding(padding: EdgeInsets.symmetric(horizontal:25),child:Text('Unpaid')),
+                    Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 25),
+                        child: Text('Paid')),
+                    Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 25),
+                        child: Text('Unpaid')),
                   ],
                 ),
               ),

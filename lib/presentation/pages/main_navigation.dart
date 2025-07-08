@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 
 import 'dashboard_page.dart';
 import 'chart_page.dart';
 import 'loans_debts_page.dart';
 import 'inventory_page.dart';
+
+import '../../providers/transaction_provider.dart';
+import '../../providers/loan_debt_provider.dart';
+import '../../providers/inventory_provider.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -21,6 +27,8 @@ class _MainNavigationState extends State<MainNavigation> {
     LoansDebtsPage(),
     InventoryPage(),
   ];
+
+
 
   @override
   Widget build(BuildContext context) {

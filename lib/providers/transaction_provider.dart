@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../data/models/transaction_model.dart';
@@ -9,10 +10,23 @@ class TransactionProvider extends ChangeNotifier {
 
   List<TransactionModel> get transactions => _transactions;
 
-  void addTransaction(TransactionModel transaction) {
-    _transactions.insert(0, transaction);
-    notifyListeners();
-  }
+  Future<void> saveTransaction(TransactionModel tx) async {
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid == null) return;
+
+  final docRef = FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .collection('transactions')
+      .doc(); // auto-ID
+
+  final newTx = tx.copyWith(id: docRef.id);
+
+  await docRef.set(newTx.toJson());
+
+
+}
+
 
   Future<void> updateTransaction(String uid, TransactionModel updated) async {
     await FirebaseFirestore.instance
