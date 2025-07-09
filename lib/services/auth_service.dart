@@ -97,7 +97,8 @@ class AuthService {
     if (uid == null) return;
 
     try {
-      await context.read<InventoryProvider>().loadItems();
+      context.read<InventoryProvider>().listenToInventory(uid);
+
       context.read<TransactionProvider>().listenToTransactions(uid);
       context.read<LoanDebtProvider>().listenToLoanDebts(uid);
     } catch (e, st) {

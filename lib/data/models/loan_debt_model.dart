@@ -1,10 +1,13 @@
-enum LdType   { loan, debt }              // loan = meminjamkan, debt = meminjam
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+
+enum LdType { loan, debt }              // loan = meminjamkan, debt = meminjam
 enum LdStatus { unpaid, paid }
 
 class LoanDebtModel {
   final String id;
   final DateTime date;
-  final String counterparty;              // Pihak yang terkait
+  final String counterparty;
   final String description;
   final double amount;
   final LdType type;
@@ -40,23 +43,39 @@ class LoanDebtModel {
     );
   }
 
-  /// 🔁 From Firestore (string ISO date)
+  /// 🔁 From Firestore (String or Timestamp)
   factory LoanDebtModel.fromJson(Map<String, dynamic> json) {
-    return LoanDebtModel(
-      id: json['id'] ?? '',
-      date: DateTime.parse(json['date']),
-      counterparty: json['counterparty'] ?? '',
-      description: json['description'] ?? '',
-      amount: (json['amount'] as num).toDouble(),
-      type: LdType.values.byName(json['type']),
-      status: LdStatus.values.byName(json['status']),
-    );
+    try {
+      final rawDate = json['date'];
+      final parsedDate = rawDate is Timestamp
+          ? rawDate.toDate()
+          : DateTime.tryParse(rawDate.toString()) ?? DateTime.now();
+
+      return LoanDebtModel(
+        id: json['id'] ?? '',
+        date: parsedDate,
+        counterparty: json['counterparty'] ?? '',
+        description: json['description'] ?? '',
+        amount: (json['amount'] as num).toDouble(),
+        type: LdType.values.firstWhere(
+          (e) => e.name == json['type'],
+          orElse: () => LdType.debt,
+        ),
+        status: LdStatus.values.firstWhere(
+          (e) => e.name == json['status'],
+          orElse: () => LdStatus.unpaid,
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ Gagal parsing LoanDebtModel: $e');
+      rethrow;
+    }
   }
 
-  /// 🔁 To Firestore (string ISO date)
+  /// 🔁 To Firestore
   Map<String, dynamic> toJson() => {
         'id': id,
-        'date': date.toIso8601String(),        // ⬅️ simpan sebagai ISO string
+        'date': date.toIso8601String(),
         'counterparty': counterparty,
         'description': description,
         'amount': amount,

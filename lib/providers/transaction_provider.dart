@@ -6,27 +6,23 @@ import '../data/models/transaction_model.dart';
 
 class TransactionProvider extends ChangeNotifier {
   final List<TransactionModel> _transactions = [];
-  StreamSubscription? _subscription; // 👈 Tambahan: untuk real-time listener
+  StreamSubscription? _subscription;
 
   List<TransactionModel> get transactions => _transactions;
 
   Future<void> saveTransaction(TransactionModel tx) async {
-  final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
 
-  final docRef = FirebaseFirestore.instance
-      .collection('users')
-      .doc(uid)
-      .collection('transactions')
-      .doc(); // auto-ID
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('transactions')
+        .doc(); // auto-ID
 
-  final newTx = tx.copyWith(id: docRef.id);
-
-  await docRef.set(newTx.toJson());
-
-
-}
-
+    final newTx = tx.copyWith(id: docRef.id);
+    await docRef.set(newTx.toJson());
+  }
 
   Future<void> updateTransaction(String uid, TransactionModel updated) async {
     await FirebaseFirestore.instance
@@ -55,7 +51,6 @@ class TransactionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 🟡 Tidak wajib lagi dipakai jika sudah pakai listenToTransactions()
   Future<void> fetchFromFirebase(String uid) async {
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
@@ -65,17 +60,14 @@ class TransactionProvider extends ChangeNotifier {
         .get();
 
     final data = snapshot.docs.map((doc) {
-      final d = doc.data();
-      return TransactionModel(
-        id: doc.id,
-        amount: (d['amount'] as num).toDouble(),
-        type: d['type'] as String,
-        description: d['description'] ?? '',
-        category: d['category'] ?? '',
-        date: d['date'] is Timestamp
-            ? (d['date'] as Timestamp).toDate()
-            : DateTime.parse(d['date']),
-      );
+      try {
+        final map = doc.data();
+        map['id'] = doc.id;
+        return TransactionModel.fromJson(map);
+      } catch (e) {
+        debugPrint('❌ Gagal parsing transaksi: $e');
+        rethrow;
+      }
     }).toList();
 
     _transactions
@@ -85,7 +77,6 @@ class TransactionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// ✅ Listener real-time untuk sinkronisasi otomatis (online/offline)
   void listenToTransactions(String uid) {
     _subscription = FirebaseFirestore.instance
         .collection('users')
@@ -95,17 +86,14 @@ class TransactionProvider extends ChangeNotifier {
         .snapshots()
         .listen((snapshot) {
       final data = snapshot.docs.map((doc) {
-        final d = doc.data();
-        return TransactionModel(
-          id: doc.id,
-          amount: (d['amount'] as num).toDouble(),
-          type: d['type'] as String,
-          description: d['description'] ?? '',
-          category: d['category'] ?? '',
-          date: d['date'] is Timestamp
-              ? (d['date'] as Timestamp).toDate()
-              : DateTime.parse(d['date']),
-        );
+        try {
+          final map = doc.data();
+          map['id'] = doc.id;
+          return TransactionModel.fromJson(map);
+        } catch (e) {
+          debugPrint('❌ Gagal parsing transaksi (listener): $e');
+          rethrow;
+        }
       }).toList();
 
       _transactions
@@ -116,16 +104,13 @@ class TransactionProvider extends ChangeNotifier {
     });
   }
 
-  /// ✅ Hentikan subscription saat logout atau dispose
   void cancelSubscription() {
     _subscription?.cancel();
     _subscription = null;
   }
 
-  /// ✅ Bersihkan data lokal (misalnya saat logout)
   void clear() {
     _transactions.clear();
     notifyListeners();
   }
 }
-

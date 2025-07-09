@@ -1,17 +1,19 @@
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:proyek_baru/data/models/loan_debt_model.dart';
+import '../data/models/loan_debt_model.dart';
 
 class LoanDebtProvider extends ChangeNotifier {
   final List<LoanDebtModel> _items = [];
-  List<LoanDebtModel> get data => List.unmodifiable(_items);
-
   StreamSubscription? _subscription;
 
+  List<LoanDebtModel> get items => List.unmodifiable(_items);
+
   void listenToLoanDebts(String uid) {
+    debugPrint('[LoanDebtProvider] Listening to UID: $uid');
+
+    _subscription?.cancel();
     _subscription = FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
@@ -19,22 +21,22 @@ class LoanDebtProvider extends ChangeNotifier {
         .orderBy('date', descending: true)
         .snapshots()
         .listen((snapshot) {
-      final debts = snapshot.docs.map((doc) {
-        final d = doc.data();
-        return LoanDebtModel(
-          id: doc.id,
-          date: (d['date'] as Timestamp).toDate(),
-          counterparty: d['counterparty'] ?? '',
-          description: d['description'] ?? '',
-          amount: (d['amount'] as num).toDouble(),
-          type: d['type'] ?? 'debt',
-          status: d['status'] ?? 'unpaid',
-        );
+      debugPrint('[LoanDebtProvider] Docs: ${snapshot.docs.length}');
+
+      final data = snapshot.docs.map((doc) {
+        try {
+          final map = doc.data();
+          map['id'] = doc.id; // inject id ke dalam map
+          return LoanDebtModel.fromJson(map);
+        } catch (e) {
+          debugPrint('❌ Gagal parsing LoanDebt: $e');
+          rethrow;
+        }
       }).toList();
 
       _items
         ..clear()
-        ..addAll(debts);
+        ..addAll(data);
 
       notifyListeners();
     });
@@ -50,5 +52,41 @@ class LoanDebtProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /* Hapus fungsi add(), update(), remove() jika sudah pakai real-time listener */
+  Future<void> addItem(LoanDebtModel item) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('loan_debts')
+        .doc();
+
+    final newItem = item.copyWith(id: docRef.id);
+    await docRef.set(newItem.toJson());
+  }
+
+  Future<void> updateItem(LoanDebtModel item) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('loan_debts')
+        .doc(item.id)
+        .update(item.toJson());
+  }
+
+  Future<void> deleteItem(String id) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('loan_debts')
+        .doc(id)
+        .delete();
+  }
 }

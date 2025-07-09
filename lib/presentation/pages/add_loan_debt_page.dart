@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +6,7 @@ import 'package:flutter/services.dart';
 import '../../providers/loan_debt_provider.dart';
 import '../../data/models/loan_debt_model.dart';
 
-/* warna ungu sama */
+/* — WARNA TETAP — */
 const kPurple = Color(0xFF7C5CFF);
 const kPurpleGrad = LinearGradient(
   colors: [Color(0xFF9F7BFF), Color(0xFF7C5CFF)],
@@ -24,7 +22,7 @@ class AddLoanDebtPage extends StatefulWidget {
 }
 
 class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
-  final _fKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _dateC = TextEditingController();
   final _nameC = TextEditingController();
   final _descC = TextEditingController();
@@ -32,7 +30,6 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
 
   DateTime _selectedDate = DateTime.now();
   LdType? _type;
-
   LdStatus _status = LdStatus.unpaid;
 
   @override
@@ -41,20 +38,68 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
     _dateC.text = DateFormat('MM/dd/yyyy').format(_selectedDate);
   }
 
+  @override
+  void dispose() {
+    _dateC.dispose();
+    _nameC.dispose();
+    _descC.dispose();
+    _amountC.dispose();
+    super.dispose();
+  }
+
   Future<void> _pickDate() async {
-    final d = await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (d != null) {
+    if (picked != null) {
       setState(() {
-        _selectedDate = d;
-        _dateC.text = DateFormat('MM/dd/yyyy').format(d);
+        _selectedDate = picked;
+        _dateC.text = DateFormat('MM/dd/yyyy').format(picked);
       });
     }
   }
+
+  void _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_type == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih tipe Debt atau Loan')),
+      );
+      return;
+    }
+
+    final newItem = LoanDebtModel(
+      id: '', // akan diisi oleh Firestore
+      date: _selectedDate,
+      counterparty: _nameC.text.trim(),
+      description: _descC.text.trim(),
+      amount: double.parse(_amountC.text),
+      type: _type!,
+      status: _status,
+    );
+
+    await context.read<LoanDebtProvider>().addItem(newItem);
+    Navigator.pop(context);
+  }
+
+  InputDecoration _fieldDec({Widget? prefix, Widget? suffix}) => InputDecoration(
+        prefix: prefix,
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Color(0xFF969696)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: kPurple, width: 1.4),
+          borderRadius: BorderRadius.circular(8),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +112,7 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Form(
-          key: _fKey,
+          key: _formKey,
           child: ListView(
             children: [
               const _Label('Date'),
@@ -84,7 +129,8 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
               TextFormField(
                 controller: _nameC,
                 decoration: _fieldDec(),
-                validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 12),
               const _Label('Description'),
@@ -97,49 +143,39 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
               const _Label('Amount'),
               Row(
                 children: [
-                  // ── kolom Amount ───────────────────────────────
                   Flexible(
                     flex: 2,
                     child: TextFormField(
                       controller: _amountC,
                       keyboardType: TextInputType.number,
-                      decoration: _fieldDec(
-                          prefix: const Text('Rp')), // ← bebas ‘Rp’ / ‘$’
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly, // ← hanya angka
-                        // jika mau izinkan desimal 2 digit, pakai baris di bawah
-                        // FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                      ],
+                      decoration: _fieldDec(prefix: const Text('Rp')),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Required' : null,
+                          (v == null || v.isEmpty) ? 'Wajib diisi' : null,
                     ),
                   ),
                   const SizedBox(width: 12),
-
-                  // ── Toggle Loan / Debt ──────────────────────────
                   Flexible(
-                      flex: 3,
-                      child: ToggleButtons(
-                        isSelected: [
-                          _type == LdType.debt,
-                          _type == LdType.loan
-                        ],
-                        onPressed: (i) {
-                          print("User clicked toggle index: $i");
-                          setState(
-                              () => _type = i == 0 ? LdType.debt : LdType.loan);
-                        },
-                        children: const [
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 18),
-                            child: Text('Debt'), // ← kiri
-                          ),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 18),
-                            child: Text('Loan'), // ← kanan
-                          ),
-                        ],
-                      )),
+                    flex: 3,
+                    child: ToggleButtons(
+                      isSelected: [
+                        _type == LdType.debt,
+                        _type == LdType.loan,
+                      ],
+                      onPressed: (i) =>
+                          setState(() => _type = i == 0 ? LdType.debt : LdType.loan),
+                      children: const [
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 18),
+                          child: Text('Debt'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 18),
+                          child: Text('Loan'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 18),
@@ -147,13 +183,13 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
               ToggleButtons(
                 isSelected: [
                   _status == LdStatus.paid,
-                  _status == LdStatus.unpaid
+                  _status == LdStatus.unpaid,
                 ],
                 borderRadius: BorderRadius.circular(8),
                 selectedColor: Colors.white,
                 fillColor: kPurple,
-                onPressed: (i) => setState(
-                    () => _status = i == 0 ? LdStatus.paid : LdStatus.unpaid),
+                onPressed: (i) => setState(() =>
+                    _status = i == 0 ? LdStatus.paid : LdStatus.unpaid),
                 children: const [
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 38),
@@ -166,7 +202,6 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
                 ],
               ),
               const SizedBox(height: 28),
-              /* Save */
               SizedBox(
                 height: 48,
                 child: DecoratedBox(
@@ -194,58 +229,6 @@ class _AddLoanDebtPageState extends State<AddLoanDebtPage> {
       ),
     );
   }
-
-  /* ---------- helpers ---------- */
-  InputDecoration _fieldDec({Widget? prefix, Widget? suffix}) =>
-      InputDecoration(
-        prefix: prefix,
-        suffixIcon: suffix,
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Color(0xFF969696)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: kPurple, width: 1.4),
-          borderRadius: BorderRadius.circular(8),
-        ),
-      );
-
-  void _save() async {
-  if (!_fKey.currentState!.validate()) return;
-
-  if (_type == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Silakan pilih tipe terlebih dahulu')),
-    );
-    return;
-  }
-
-  final m = LoanDebtModel(
-    id: UniqueKey().toString(),
-    date: _selectedDate,
-    counterparty: _nameC.text,
-    description: _descC.text,
-    amount: double.parse(_amountC.text),
-    type: _type!,
-    status: _status,
-  );
-
-  
-
-
-  // Simpan ke Firebase
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(uid)
-      .collection('loan_debts')
-      .add(m.toJson());
-
-  Navigator.pop(context);
-}
-
 }
 
 class _Label extends StatelessWidget {

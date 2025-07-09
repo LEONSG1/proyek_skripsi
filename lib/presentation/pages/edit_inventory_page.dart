@@ -1,4 +1,3 @@
-// lib/presentation/pages/edit_inventory_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/models/inventory_item.dart';
@@ -13,30 +12,28 @@ class EditInventoryPage extends StatefulWidget {
 }
 
 class _EditInventoryPageState extends State<EditInventoryPage> {
-  final _formKey   = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameCtrl;
   late final TextEditingController _stockCtrl;
   late final TextEditingController _priceCtrl;
 
-  // ── state ──
   late String _selectedUnit;
   late String _selectedCategory;
 
-  // ── const ui ──
-  static const _primary    = Color(0xFF6C4AB0);
-  static const _bg         = Color(0xFFF2F4F8);
-  static const _units      = ['kg', 'L', 'pcs'];
+  static const _primary = Color(0xFF6C4AB0);
+  static const _bg = Color(0xFFF2F4F8);
+  static const _units = ['kg', 'L', 'pcs'];
   static const _categories = ['Bahan Pokok', 'Olahan', 'Bumbu'];
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl   = TextEditingController(text: widget.item.name);
-    _stockCtrl  = TextEditingController(text: widget.item.stock.toString());
-    _priceCtrl  = TextEditingController(text: widget.item.price.toStringAsFixed(0));
-
-    _selectedUnit      = widget.item.unit;
-    _selectedCategory  = widget.item.category;
+    _nameCtrl = TextEditingController(text: widget.item.name);
+    _stockCtrl = TextEditingController(text: widget.item.stock.toString());
+    _priceCtrl =
+        TextEditingController(text: widget.item.price.toStringAsFixed(0));
+    _selectedUnit = widget.item.unit;
+    _selectedCategory = widget.item.category;
   }
 
   @override
@@ -47,8 +44,7 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
     super.dispose();
   }
 
-  InputDecoration _decoration(String label, IconData icon) =>
-      InputDecoration(
+  InputDecoration _decoration(String label, IconData icon) => InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: _primary),
         filled: true,
@@ -59,31 +55,30 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
         ),
       );
 
-  // bottom-sheet kategori
   Future<void> _pickCategory() async {
-  final result = await showModalBottomSheet<String>(
-    context: context,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-    // ↓↓↓ builder baru ↓↓↓
-    builder: (_) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize
-            .min,                // <-- kunci agar sheet setinggi konten
-        children: _categories.map((c) => ListTile(
-          leading: const Icon(Icons.category_outlined, color: _primary),
-          title: Text(c),
-          trailing: c == _selectedCategory
-              ? const Icon(Icons.check, color: _primary)
-              : null,
-          onTap: () => Navigator.pop(context, c),
-        )).toList(),
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _categories
+              .map((c) => ListTile(
+                    leading:
+                        const Icon(Icons.category_outlined, color: _primary),
+                    title: Text(c),
+                    trailing: c == _selectedCategory
+                        ? const Icon(Icons.check, color: _primary)
+                        : null,
+                    onTap: () => Navigator.pop(context, c),
+                  ))
+              .toList(),
+        ),
       ),
-    ),
-  );
-  if (result != null) setState(() => _selectedCategory = result);
-}
-
+    );
+    if (result != null) setState(() => _selectedCategory = result);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,18 +104,19 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
               key: _formKey,
               child: Column(
                 children: [
-                  // ── tombol EDIT & DELETE ──
                   Row(
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: _onUpdate,
-                          icon: const Icon(Icons.edit, color: Colors.white),
-                          label: const Text('Update', style: TextStyle(color: Colors.amber), ),
+                          icon:
+                              const Icon(Icons.edit, color: Colors.white),
+                          label: const Text('Update',
+                              style: TextStyle(color: Colors.amber)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _primary,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
+                                borderRadius: BorderRadius.circular(14)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                         ),
@@ -129,12 +125,13 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: _onDelete,
-                          icon: const Icon(Icons.delete, color: Colors.white),
+                          icon:
+                              const Icon(Icons.delete, color: Colors.white),
                           label: const Text('Delete'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red[600],
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
+                                borderRadius: BorderRadius.circular(14)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                         ),
@@ -143,7 +140,6 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // ── Name ──
                   TextFormField(
                     controller: _nameCtrl,
                     decoration: _decoration('Nama Barang', Icons.inventory_2_outlined),
@@ -151,7 +147,6 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
                   ),
                   const SizedBox(height: 18),
 
-                  // ── Stock ──
                   TextFormField(
                     controller: _stockCtrl,
                     keyboardType: TextInputType.number,
@@ -160,7 +155,6 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
                   ),
                   const SizedBox(height: 18),
 
-                  // ── Unit (ChoiceChip) ──
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Wrap(
@@ -175,7 +169,6 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
                   ),
                   const SizedBox(height: 18),
 
-                  // ── Price ──
                   TextFormField(
                     controller: _priceCtrl,
                     keyboardType: TextInputType.number,
@@ -184,7 +177,6 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
                   ),
                   const SizedBox(height: 18),
 
-                  // ── Category (modal) ──
                   GestureDetector(
                     onTap: _pickCategory,
                     child: AbsorbPointer(
@@ -204,23 +196,24 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
     );
   }
 
-  // ── actions ──
-  void _onUpdate() {
+  // ───── ACTIONS ─────
+  Future<void> _onUpdate() async {
     if (!_formKey.currentState!.validate()) return;
 
-    context.read<InventoryProvider>().updateItem(
-      id: widget.item.id,
+    final updated = widget.item.copyWith(
       name: _nameCtrl.text.trim(),
       stock: int.tryParse(_stockCtrl.text) ?? widget.item.stock,
       unit: _selectedUnit,
       price: double.tryParse(_priceCtrl.text) ?? widget.item.price,
       category: _selectedCategory,
     );
+
+    await context.read<InventoryProvider>().updateItem(updated);
     Navigator.pop(context);
   }
 
-  void _onDelete() {
-    context.read<InventoryProvider>().removeItem(widget.item.id);
+  Future<void> _onDelete() async {
+    await context.read<InventoryProvider>().deleteItem(widget.item.id);
     Navigator.pop(context);
   }
 }

@@ -18,6 +18,9 @@ class _InventoryPageState extends State<InventoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Log saat halaman dibuka
+    print('📦 InventoryPage DIBUKA');
+
     final inv = context.watch<InventoryProvider>();
 
     print('[InventoryPage] Total items loaded: ${inv.items.length}');
@@ -28,7 +31,7 @@ class _InventoryPageState extends State<InventoryPage> {
       ...inv.items.map((it) => it.category),
     }.toList();
 
-    // saring berdasarkan search & kategori
+    // filter berdasarkan kategori & pencarian
     final filtered = inv.items.where((it) {
       if (_selectedCategory != 'Semua' && it.category != _selectedCategory) {
         return false;
@@ -57,12 +60,11 @@ class _InventoryPageState extends State<InventoryPage> {
       ),
       body: Column(
         children: [
-          // ───── Top Card ─────
+          // ───── Summary Card ─────
           Padding(
             padding: const EdgeInsets.all(16),
             child: Card(
               color: Colors.transparent,
-              surfaceTintColor: Colors.transparent,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -72,7 +74,8 @@ class _InventoryPageState extends State<InventoryPage> {
                   color: const Color(0xFFF9E6D4),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -92,7 +95,9 @@ class _InventoryPageState extends State<InventoryPage> {
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
                 hintText: 'Search',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
@@ -102,7 +107,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
           const SizedBox(height: 8),
 
-          // ───── Category Chips ─────
+          // ───── Kategori ─────
           SizedBox(
             height: 36,
             child: ListView.separated(
@@ -123,7 +128,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
           const SizedBox(height: 8),
 
-          // ───── List of Items ─────
+          // ───── List Barang ─────
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -133,13 +138,15 @@ class _InventoryPageState extends State<InventoryPage> {
                 print('[InventoryPage] Render item: ${it.name}');
 
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 2,
                   child: ListTile(
-                    leading: Icon(it.icon, color: Colors.green[700]),
+                    // ✅ Gunakan icon default, bukan dari model
+                    leading: const Icon(Icons.inventory_2, color: Colors.green),
                     title: Text(it.name,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text('Stok: ${it.stock} ${it.unit}'),
@@ -163,6 +170,8 @@ class _InventoryPageState extends State<InventoryPage> {
           ),
         ],
       ),
+
+      // ───── Tombol Tambah ─────
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),

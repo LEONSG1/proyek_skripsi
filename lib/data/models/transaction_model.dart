@@ -41,19 +41,27 @@ class TransactionModel {
         'type': type,
         'description': description,
         'category': category,
-        'date': date.toIso8601String(),
+        'date': date.toIso8601String(), // Simpan sebagai string ISO
       };
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
-    return TransactionModel(
-      id: json['id'] ?? '',
-      amount: (json['amount'] as num).toDouble(),
-      type: json['type'] ?? '',
-      description: json['description'] ?? '',
-      category: json['category'] ?? '',
-      date: json['date'] is Timestamp
-          ? (json['date'] as Timestamp).toDate()
-          : DateTime.parse(json['date']),
-    );
+    try {
+      final rawDate = json['date'];
+      final parsedDate = rawDate is Timestamp
+          ? rawDate.toDate()
+          : DateTime.tryParse(rawDate.toString()) ?? DateTime.now();
+
+      return TransactionModel(
+        id: json['id'] ?? '',
+        amount: (json['amount'] as num).toDouble(),
+        type: json['type'] ?? '',
+        description: json['description'] ?? '',
+        category: json['category'] ?? '',
+        date: parsedDate,
+      );
+    } catch (e) {
+      print('❌ Gagal parsing TransactionModel: $e');
+      rethrow;
+    }
   }
 }
