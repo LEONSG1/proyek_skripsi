@@ -78,31 +78,33 @@ class TransactionProvider extends ChangeNotifier {
   }
 
   void listenToTransactions(String uid) {
-    _subscription = FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('transactions')
-        .orderBy('date', descending: true)
-        .snapshots()
-        .listen((snapshot) {
-      final data = snapshot.docs.map((doc) {
-        try {
-          final map = doc.data();
-          map['id'] = doc.id;
-          return TransactionModel.fromJson(map);
-        } catch (e) {
-          debugPrint('❌ Gagal parsing transaksi (listener): $e');
-          rethrow;
-        }
-      }).toList();
-
-      _transactions
-        ..clear()
-        ..addAll(data);
-
-      notifyListeners();
-    });
+  if (uid.isEmpty) {
+    debugPrint('❗ UID kosong, batal listen');
+    return;
   }
+
+  _subscription?.cancel();
+
+  _subscription = FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .collection('transactions')
+      .orderBy('date', descending: true)
+      .snapshots()
+      .listen((snapshot) {
+        final data = snapshot.docs.map((doc) {
+          final d = doc.data();
+          return TransactionModel.fromJson({...d, 'id': doc.id});
+        }).toList();
+
+        _transactions
+          ..clear()
+          ..addAll(data);
+
+        notifyListeners();
+      });
+}
+
 
   void cancelSubscription() {
     _subscription?.cancel();

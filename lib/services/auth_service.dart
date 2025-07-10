@@ -22,9 +22,9 @@ class AuthService {
       );
 
       await _saveUserToFirestore(credential.user!);
-      await initializeUserData(context); // 👈 Tambahkan listener setelah signup
+      await initializeUserData(context); // ✅ Jalankan listener setelah signup
 
-      Navigator.pushReplacementNamed(context, '/main');
+      // ❌ Jangan pakai Navigator — biarkan AuthWrapper redirect otomatis
     } on FirebaseAuthException catch (e) {
       String msg;
       if (e.code == 'weak-password') {
@@ -54,9 +54,9 @@ class AuthService {
         password: password,
       );
 
-      await initializeUserData(context); // 👈 Tambahkan listener setelah login
+      await initializeUserData(context); // ✅ Jalankan listener setelah login
 
-      Navigator.pushReplacementNamed(context, '/main');
+      // ❌ Jangan pakai Navigator — biarkan AuthWrapper redirect otomatis
     } on FirebaseAuthException catch (e) {
       String msg;
       if (e.code == 'user-not-found' || e.code == 'invalid-email') {
@@ -74,31 +74,43 @@ class AuthService {
     }
   }
 
-  /* ────────────── SIGN-OUT (Final) ───────────── */
+  /* ────────────── SIGN-OUT (tanpa Navigator) ───────────── */
   Future<void> signout({required BuildContext context}) async {
-    // Bersihkan listener dan data lokal
-    context.read<TransactionProvider>().cancelSubscription();
-    context.read<LoanDebtProvider>().cancelSubscription();
+    debugPrint('[AuthService] Mulai logout');
 
-    context.read<TransactionProvider>().clear();
-    context.read<LoanDebtProvider>().clear();
-    context.read<InventoryProvider>().clear();
+    try {
+      // 1. Cancel listener
+      context.read<TransactionProvider>().cancelSubscription();
+      context.read<LoanDebtProvider>().cancelSubscription();
+      context.read<InventoryProvider>().cancelSubscription();
+      debugPrint('[AuthService] Listener dibatalkan');
 
-    // Sign out dari Firebase
-    await FirebaseAuth.instance.signOut();
+      // 2. Bersihkan data lokal
+      context.read<TransactionProvider>().clear();
+      context.read<LoanDebtProvider>().clear();
+      context.read<InventoryProvider>().clear();
+      debugPrint('[AuthService] Data lokal dibersihkan');
 
-    // Arahkan ke halaman login
-    Navigator.pushReplacementNamed(context, '/login');
+      // 3. Tunggu sedikit (opsional)
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // 4. Sign out dari Firebase
+      await FirebaseAuth.instance.signOut();
+      debugPrint('[AuthService] Firebase sign out sukses');
+
+      // ❌ Tidak pakai navigator, AuthWrapper akan redirect otomatis
+    } catch (e) {
+      debugPrint('❌ Error saat logout: $e');
+    }
   }
 
-  /* ─────── NEW: INITIALIZE PROVIDERS ─────── */
+  /* ─────── Listener Data per User ─────── */
   Future<void> initializeUserData(BuildContext context) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
     try {
       context.read<InventoryProvider>().listenToInventory(uid);
-
       context.read<TransactionProvider>().listenToTransactions(uid);
       context.read<LoanDebtProvider>().listenToLoanDebts(uid);
     } catch (e, st) {

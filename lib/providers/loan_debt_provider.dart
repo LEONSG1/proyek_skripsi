@@ -11,6 +11,11 @@ class LoanDebtProvider extends ChangeNotifier {
   List<LoanDebtModel> get items => List.unmodifiable(_items);
 
   void listenToLoanDebts(String uid) {
+    if (uid.isEmpty) {
+    debugPrint('❗ UID kosong, batal listen');
+    return;
+  }
+
     debugPrint('[LoanDebtProvider] Listening to UID: $uid');
 
     _subscription?.cancel();

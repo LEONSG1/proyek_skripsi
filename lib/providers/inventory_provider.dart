@@ -18,6 +18,11 @@ class InventoryProvider extends ChangeNotifier {
 
   /// 🔄 Real-time sync from Firestore
   void listenToInventory(String uid) {
+    if (uid.isEmpty) {
+    debugPrint('❗ UID kosong, batal listen');
+    return;
+  }
+
     debugPrint('[InventoryProvider] Listening to UID: $uid');
 
     _subscription?.cancel();
