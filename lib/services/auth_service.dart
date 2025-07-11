@@ -106,18 +106,26 @@ class AuthService {
 
   /* ─────── Listener Data per User ─────── */
   Future<void> initializeUserData(BuildContext context) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-
-    try {
-      context.read<InventoryProvider>().listenToInventory(uid);
-      context.read<TransactionProvider>().listenToTransactions(uid);
-      context.read<LoanDebtProvider>().listenToLoanDebts(uid);
-    } catch (e, st) {
-      debugPrint('[AuthService] Listener init failed: $e');
-      debugPrintStack(stackTrace: st);
-    }
+  // ⏳ Tunggu sampai currentUser tidak null (max 2 detik)
+  int retry = 0;
+  while (FirebaseAuth.instance.currentUser == null && retry < 20) {
+    await Future.delayed(const Duration(milliseconds: 100));
+    retry++;
   }
+
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid == null || uid.isEmpty) {
+    debugPrint('❗ UID tetap kosong setelah tunggu. Listener tidak dijalankan.');
+    return;
+  }
+
+  debugPrint('✅ Listener dijalankan dengan UID: $uid');
+
+  context.read<InventoryProvider>().listenToInventory(uid);
+  context.read<TransactionProvider>().listenToTransactions(uid);
+  context.read<LoanDebtProvider>().listenToLoanDebts(uid);
+}
+
 
   /* ─────────── SAVE USER TO FIRESTORE ─────────── */
   Future<void> _saveUserToFirestore(User user) async {

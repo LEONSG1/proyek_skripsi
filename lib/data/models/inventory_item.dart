@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class InventoryItem {
   final String id;
   final String name;
@@ -16,15 +18,30 @@ class InventoryItem {
   });
 
   factory InventoryItem.fromJson(Map<String, dynamic> json) {
+  try {
     return InventoryItem(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
-      stock: json['stock'] ?? 0,
+      stock: (json['stock'] ?? 0) as int,
       unit: json['unit'] ?? '',
-      price: (json['price'] as num).toDouble(),
+      price: (json['price'] is num)
+          ? (json['price'] as num).toDouble()
+          : double.tryParse(json['price'].toString()) ?? 0.0,
       category: json['category'] ?? '',
     );
+  } catch (e) {
+    debugPrint('❌ Gagal parsing InventoryItem: $e\nData: $json');
+    return InventoryItem(
+      id: '',
+      name: 'Invalid',
+      stock: 0,
+      unit: '-',
+      price: 0.0,
+      category: 'Unknown',
+    ); // biar tetap jalan
   }
+}
+
 
   Map<String, dynamic> toJson() => {
         'id': id,

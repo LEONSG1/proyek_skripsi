@@ -18,11 +18,6 @@ class InventoryProvider extends ChangeNotifier {
 
   /// 🔄 Real-time sync from Firestore
   void listenToInventory(String uid) {
-    if (uid.isEmpty) {
-    debugPrint('❗ UID kosong, batal listen');
-    return;
-  }
-
     debugPrint('[InventoryProvider] Listening to UID: $uid');
 
     _subscription?.cancel();
@@ -35,8 +30,13 @@ class InventoryProvider extends ChangeNotifier {
         .listen((snapshot) {
       debugPrint('[InventoryProvider] Snapshot docs: ${snapshot.docs.length}');
       final data = snapshot.docs.map((doc) {
-        final d = doc.data();
-        return InventoryItem.fromJson(d);
+        try {
+          final map = {...doc.data(), 'id': doc.id};
+          return InventoryItem.fromJson(map); // ✅ ganti Model
+        } catch (e) {
+          debugPrint('❌ Error parsing Inventory ${doc.id}: $e');
+          rethrow;
+        }
       }).toList();
 
       _items

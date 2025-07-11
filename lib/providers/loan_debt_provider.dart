@@ -11,11 +11,6 @@ class LoanDebtProvider extends ChangeNotifier {
   List<LoanDebtModel> get items => List.unmodifiable(_items);
 
   void listenToLoanDebts(String uid) {
-    if (uid.isEmpty) {
-    debugPrint('❗ UID kosong, batal listen');
-    return;
-  }
-
     debugPrint('[LoanDebtProvider] Listening to UID: $uid');
 
     _subscription?.cancel();
@@ -30,11 +25,10 @@ class LoanDebtProvider extends ChangeNotifier {
 
       final data = snapshot.docs.map((doc) {
         try {
-          final map = doc.data();
-          map['id'] = doc.id; // inject id ke dalam map
-          return LoanDebtModel.fromJson(map);
+          final map = {...doc.data(), 'id': doc.id};
+          return LoanDebtModel.fromJson(map); // ✅ ganti Model
         } catch (e) {
-          debugPrint('❌ Gagal parsing LoanDebt: $e');
+          debugPrint('❌ Error parsing LoanDebt ${doc.id}: $e');
           rethrow;
         }
       }).toList();
