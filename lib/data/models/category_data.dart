@@ -8,22 +8,25 @@ class CategoryItem {
 
 /* ---------- Pengeluaran ---------- */
 const List<CategoryItem> expenseCategories = [
-  CategoryItem('Makanan', Icons.restaurant),
+  CategoryItem('Bahan Baku', Icons.shopping_basket),
   CategoryItem('Transportasi', Icons.directions_car),
-  CategoryItem('Dompet Digital', Icons.account_balance_wallet),
-  CategoryItem('Kebutuhan Bulanan', Icons.receipt_long),
-  CategoryItem('Belanja', Icons.shopping_cart),
+  CategoryItem('Gaji Karyawan', Icons.account_balance_wallet),
+  CategoryItem('Retribusi Ormas', Icons.account_balance_wallet),
   CategoryItem('Sewa/Kontrak', Icons.house_siding),
   CategoryItem('Cicilan', Icons.request_quote),
-  CategoryItem('Entertainment', Icons.music_note),
-  CategoryItem('Hobi', Icons.photo_camera),
-  CategoryItem('Olahraga', Icons.sports_soccer),
-  CategoryItem('Kesehatan', Icons.favorite_border),
+  CategoryItem('Operasional', Icons.shopping_cart),
+  CategoryItem('Kebutuhan Produksi', Icons.shopping_cart),
+  
+ CategoryItem('Pajak', Icons.taxi_alert),
+ CategoryItem('Lain lain', Icons.account_balance_wallet),
+ 
 ];
 
 /* ---------- Pemasukan ---------- */
 const List<CategoryItem> incomeCategories = [
-  CategoryItem('Penjualan Nasi Ayam', Icons.rice_bowl),
-  CategoryItem('Penjualan Nasi Rendang', Icons.rice_bowl_outlined),
+  CategoryItem('Penjualan Makanan', Icons.rice_bowl),
+  CategoryItem('Penjualan Minuman', Icons.rice_bowl_outlined),
+  CategoryItem('Pesanan Online', Icons.delivery_dining),
+  CategoryItem('Catering', Icons.assignment),
   CategoryItem('Lainnya', Icons.attach_money),
 ];

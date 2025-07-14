@@ -202,6 +202,53 @@ class _DashboardPageState extends State<DashboardPage> {
     final transactions = getFilteredTransactions(allTx);
 
     return Scaffold(
+      drawer: Drawer(
+  child: SafeArea(
+    child: Column(
+      children: [
+        // HEADER
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          color: const Color(0xFFDC6A26),
+          child: const Text(
+            'Menu',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+
+        // ISI MENU (jika ada)
+        Expanded(
+          child: ListView(
+            children: [
+              // Contoh menu lain jika ingin ditambahkan di sini
+              // ListTile(
+              //   leading: Icon(Icons.home),
+              //   title: Text('Dashboard'),
+              //   onTap: () {},
+              // ),
+            ],
+          ),
+        ),
+
+        // LOGOUT DI BAWAH
+        ListTile(
+          leading: const Icon(Icons.logout),
+          title: const Text('Logout'),
+          onTap: () {
+            Navigator.pop(context); // Tutup drawer
+            AuthService().signout(context: context);
+          },
+        ),
+      ],
+    ),
+  ),
+),
+
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(140),
         child: Container(
@@ -214,24 +261,18 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ────── potongan di dalam Column ──────
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, color: Colors.white),
-                        onSelected: (value) {
-                          if (value == 'logout') {
-                            AuthService().signout(context: context);
-
-                          }
+                      Builder(
+                        builder: (BuildContext context) {
+                          return IconButton(
+                            icon: const Icon(Icons.menu, color: Colors.white),
+                            onPressed: () {
+                              Scaffold.of(context).openDrawer();
+                            },
+                          );
                         },
-                        itemBuilder: (_) => const [
-                          PopupMenuItem(
-                            value: 'logout',
-                            child: Text('Logout'),
-                          ),
-                        ],
                       ),
                       const Text(
                         'Groceries',
@@ -241,11 +282,9 @@ class _DashboardPageState extends State<DashboardPage> {
                           color: Colors.white,
                         ),
                       ),
-                      // spacer agar teks tetap di tengah
                       const SizedBox(width: 48),
                     ],
                   ),
-
                   const SizedBox(height: 14),
                   Row(
                     children: [
