@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-
 class AddInventoryPage extends StatefulWidget {
   const AddInventoryPage({super.key});
 
@@ -16,6 +15,7 @@ class _AddInventoryPageState extends State<AddInventoryPage> {
   final _nameC = TextEditingController();
   final _stockC = TextEditingController();
   final _priceC = TextEditingController();
+  final _categoryC = TextEditingController();
 
   String? _selectedUnit;
   String? _selectedCategory;
@@ -30,6 +30,7 @@ class _AddInventoryPageState extends State<AddInventoryPage> {
     _nameC.dispose();
     _stockC.dispose();
     _priceC.dispose();
+    _categoryC.dispose();
     super.dispose();
   }
 
@@ -69,7 +70,12 @@ class _AddInventoryPageState extends State<AddInventoryPage> {
         ),
       ),
     );
-    if (result != null) setState(() => _selectedCategory = result);
+    if (result != null) {
+      setState(() {
+        _selectedCategory = result;
+        _categoryC.text = result;
+      });
+    }
   }
 
   // -------------------------------------------------
@@ -153,16 +159,15 @@ class _AddInventoryPageState extends State<AddInventoryPage> {
                     onTap: _pickCategory,
                     child: AbsorbPointer(
                       child: TextFormField(
+                        controller: _categoryC,
                         decoration:
-                            _decoration('Kategori', Icons.category_outlined)
-                                .copyWith(
-                          hintText: _selectedCategory,
-                        ),
+                            _decoration('Kategori', Icons.category_outlined),
                         validator: (_) =>
                             _selectedCategory == null ? 'Pilih kategori' : null,
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 30),
 
                   // Tombol Simpan

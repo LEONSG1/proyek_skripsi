@@ -16,6 +16,7 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _stockCtrl;
   late final TextEditingController _priceCtrl;
+  late final TextEditingController _categoryCtrl;
 
   late String _selectedUnit;
   late String _selectedCategory;
@@ -30,10 +31,10 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.item.name);
     _stockCtrl = TextEditingController(text: widget.item.stock.toString());
-    _priceCtrl =
-        TextEditingController(text: widget.item.price.toStringAsFixed(0));
+    _priceCtrl = TextEditingController(text: widget.item.price.toStringAsFixed(0));
     _selectedUnit = widget.item.unit;
     _selectedCategory = widget.item.category;
+    _categoryCtrl = TextEditingController(text: widget.item.category);
   }
 
   @override
@@ -41,6 +42,7 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
     _nameCtrl.dispose();
     _stockCtrl.dispose();
     _priceCtrl.dispose();
+    _categoryCtrl.dispose();
     super.dispose();
   }
 
@@ -59,14 +61,14 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
     final result = await showModalBottomSheet<String>(
       context: context,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: _categories
               .map((c) => ListTile(
-                    leading:
-                        const Icon(Icons.category_outlined, color: _primary),
+                    leading: const Icon(Icons.category_outlined, color: _primary),
                     title: Text(c),
                     trailing: c == _selectedCategory
                         ? const Icon(Icons.check, color: _primary)
@@ -77,7 +79,12 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
         ),
       ),
     );
-    if (result != null) setState(() => _selectedCategory = result);
+    if (result != null) {
+      setState(() {
+        _selectedCategory = result;
+        _categoryCtrl.text = result;
+      });
+    }
   }
 
   @override
@@ -104,13 +111,13 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
               key: _formKey,
               child: Column(
                 children: [
+                  // Tombol Update & Delete
                   Row(
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: _onUpdate,
-                          icon:
-                              const Icon(Icons.edit, color: Colors.white),
+                          icon: const Icon(Icons.edit, color: Colors.white),
                           label: const Text('Update',
                               style: TextStyle(color: Colors.amber)),
                           style: ElevatedButton.styleFrom(
@@ -125,8 +132,7 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: _onDelete,
-                          icon:
-                              const Icon(Icons.delete, color: Colors.white),
+                          icon: const Icon(Icons.delete, color: Colors.white),
                           label: const Text('Delete'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red[600],
@@ -140,6 +146,7 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
                   ),
                   const SizedBox(height: 24),
 
+                  // Nama Barang
                   TextFormField(
                     controller: _nameCtrl,
                     decoration: _decoration('Nama Barang', Icons.inventory_2_outlined),
@@ -147,6 +154,7 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
                   ),
                   const SizedBox(height: 18),
 
+                  // Jumlah Stok
                   TextFormField(
                     controller: _stockCtrl,
                     keyboardType: TextInputType.number,
@@ -155,6 +163,7 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
                   ),
                   const SizedBox(height: 18),
 
+                  // Pilih Unit
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Wrap(
@@ -169,6 +178,7 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
                   ),
                   const SizedBox(height: 18),
 
+                  // Harga per unit
                   TextFormField(
                     controller: _priceCtrl,
                     keyboardType: TextInputType.number,
@@ -177,12 +187,13 @@ class _EditInventoryPageState extends State<EditInventoryPage> {
                   ),
                   const SizedBox(height: 18),
 
+                  // Kategori (dengan controller agar bisa tampil)
                   GestureDetector(
                     onTap: _pickCategory,
                     child: AbsorbPointer(
                       child: TextFormField(
-                        decoration: _decoration('Kategori', Icons.category_outlined)
-                            .copyWith(hintText: _selectedCategory),
+                        controller: _categoryCtrl,
+                        decoration: _decoration('Kategori', Icons.category_outlined),
                         validator: (_) => _selectedCategory.isEmpty ? 'Pilih kategori' : null,
                       ),
                     ),

@@ -216,12 +216,12 @@ class _AddNotePageState extends State<AddNotePage> {
       type: _entryType == EntryType.expense ? 'Expense' : 'Income',
     );
 
-    
-
     // Tambahkan ke UI lokal
     await Provider.of<TransactionProvider>(context, listen: false)
-    .saveTransaction(tx);
+        .saveTransaction(tx);
 
+    // Tutup halaman setelah berhasil
+    if (context.mounted) Navigator.pop(context);
   }
 
   @override
